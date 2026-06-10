@@ -19,6 +19,7 @@ import { ZodError } from 'zod';
 import authRouter from './modules/auth/auth.router';
 import onboardingRouter from './modules/onboarding/onboarding.router';
 import dashboardRouter from './modules/dashboard/dashboard.router';
+import feedbackRouter from './modules/feedback/feedback.router';
 import { AppError } from './shared/errors/AppError';
 
 const app: Application = express();
@@ -41,6 +42,7 @@ app.use(cookieParser()); // Populates req.cookies — required by /refresh and /
 app.use('/api/auth', authRouter);
 app.use('/api/onboarding', onboardingRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/feedback', feedbackRouter);
 
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 
@@ -67,7 +69,6 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     return;
   }
 
-  // Unexpected error — log the full stack and return a generic 500.
   console.error('[Unhandled error]', err);
   res.status(500).json({ status: 'error', message: 'Internal server error.' });
 });
