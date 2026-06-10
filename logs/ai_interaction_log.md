@@ -188,3 +188,22 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ### Human-AI Collaboration Notes
 - Maintained a strict frontend scope focus during debugging by decoupling temporary system 500 exceptions from client-side visual design validations.
+
+---
+
+## [2026-06-10 21:05] Frontend Asynchronous Infrastructure & Optimistic Feedback Core
+
+### Shared Context
+- Orchestrated the state-fetching and feedback registration engine for the main personalized investor dashboard shell.
+- Connected the global asynchronous runtime context to the application root to enable independent card rendering.
+
+### Component/Feature Decisions
+- **Query Provider Implementation (`src/main.tsx`)**: Configured and initialized the central TanStack `QueryClient` to wrap the core application tree. Hardcoded window-refocus fetching overrides to conserve public API limits and manage component refresh frequencies.
+- **Dashboard State Management Hooks (`src/hooks/useDashboard.ts`)**:
+  - Engineered an atomic data loading wrapper (`useDashboardSection`) built over custom Axios resource paths with standardized 2-minute stale-time limits.
+  - Implemented an advanced optimistic update routine (`useSubmitFeedback`) utilizing TanStack Query's `onMutate`, `onError`, and `onSettled` cycle hooks. The mechanism instantly manipulates local vote cache matrices, records contextual database targets (`previousVotes`), and performs immediate rollback operations upon connection failure.
+  - Isolated localized client action maps via `useUserVotes` to safely pull past activity tracks dynamically.
+- **Re-usable Interactive UI (`src/components/VotingButtons.tsx`)**: Developed a DRY-compliant, preference-aware interactive element block. Wired directly into the dynamic feedback hook environment to instantly toggle component states without requiring global dashboard refetches.
+
+### Human-AI Collaboration Notes
+- Safely isolated global network error cascades by building out the shared core voting architecture and state contexts before drafting individual component card content containers.

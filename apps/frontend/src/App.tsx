@@ -3,8 +3,7 @@ import { ProtectedRoute, PublicRoute, OnboardingGuard, DashboardGuard } from './
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
-
-const DashboardPage = () => <div className="p-8 text-center text-xl text-primary font-bold">Main AI Crypto Dashboard (Coming Soon)</div>;
+import Dashboard from './pages/Dashboard';
 
 export default function App() {
   return (
@@ -26,7 +25,7 @@ export default function App() {
 
         {/* Protected route */}
           <Route element={<DashboardGuard />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Route>
 
