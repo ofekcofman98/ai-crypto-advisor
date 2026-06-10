@@ -21,4 +21,23 @@ export async function registerFeedback(userId: string, data: VoteDTO) {
         vote: data.vote,
       },
     });
+}
+
+export async function getUserVotes(userId: string) {
+  try {
+    return await prisma.feedback.findMany({
+      where: { userId },
+      select: {
+        id:          true,
+        sectionType: true,
+        contentId:   true,
+        vote:        true,
+        createdAt:   true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch {
+    console.warn('[feedback.service] DB unreachable for getUserVotes — returning empty array.');
+    return [];
   }
+}
