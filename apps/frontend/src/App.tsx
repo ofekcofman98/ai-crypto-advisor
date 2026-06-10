@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute, OnboardingGuard, DashboardGuard } from './components/RouteGuards';
+import Register from './pages/Register';
+import Login from './pages/Login';
+import Onboarding from './pages/Onboarding';
 
-const LoginPage = () => <div className="p-8 text-center text-xl">Login Page (Coming Soon)</div>;
-const RegisterPage = () => <div className="p-8 text-center text-xl">Register Page (Coming Soon)</div>;
-const OnboardingPage = () => <div className="p-8 text-center text-xl text-secondary font-bold">Onboarding Questionnaire (Coming Soon)</div>;
 const DashboardPage = () => <div className="p-8 text-center text-xl text-primary font-bold">Main AI Crypto Dashboard (Coming Soon)</div>;
 
 export default function App() {
@@ -13,15 +13,15 @@ export default function App() {
         
         {/* Public route */}
         <Route element={<PublicRoute />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Route>
       
         {/* Protected route */}
         <Route element={<ProtectedRoute />}>
           {/* Onboarding guard */}
           <Route element={<OnboardingGuard />}>
-            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/onboarding" element={<Onboarding />} />
           </Route>
 
         {/* Protected route */}

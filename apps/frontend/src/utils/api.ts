@@ -24,7 +24,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response && error.response.status === 401) {
+      const publicPaths = ['/login', '/register'];
+      const isOnPublicPage = publicPaths.includes(window.location.pathname);
+
+      if (error.response && error.response.status === 401 && !isOnPublicPage) {
         useAuthStore.getState().logout();
         window.location.href = '/login';
       }

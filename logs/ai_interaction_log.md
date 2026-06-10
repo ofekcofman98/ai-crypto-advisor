@@ -132,3 +132,59 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ### Human-AI Collaboration Notes
 - Handled Windows-specific NPM pathing/CLI quirks by pivoting from automated initialization to explicit manual design-token and PostCSS file declarations.
+
+---
+
+## [2026-06-10 19:30] — Frontend: Client-Side Routing & Auth-Aware Route Guards
+
+**Type:** Feature  
+**Files Affected:**
+- `apps/frontend/src/App.tsx`
+- `apps/frontend/src/components/RouteGuards.tsx`
+
+**Decision / Action:** Wired up the full client-side routing tree using `react-router-dom v7` and implemented four stateless guard components that derive redirect decisions exclusively from the Zustand auth store (`token`, `user`, `hasCompletedOnboarding`):
+
+1. **`ProtectedRoute`** — Blocks unauthenticated access; redirects to `/login` if `token` or `user` is absent.
+2. **`PublicRoute`** — Prevents already-authenticated users from accessing `/login` and `/register`; redirects them to `/dashboard` or `/onboarding` depending on their onboarding status.
+3. **`OnboardingGuard`** — Prevents users who have already completed onboarding from re-entering the `/onboarding` flow; redirects them to `/dashboard`.
+4. **`DashboardGuard`** — Prevents users who have not yet completed onboarding from accessing `/dashboard`; redirects them to `/onboarding`.
+
+`App.tsx` composes these guards as nested `<Route element={<Guard />}>` wrappers, keeping route protection declarative and co-located with route definitions. Stub page components are inlined as placeholder `div`s until full page implementations are built.
+
+**Alternatives Considered:** - *Imperative guards inside each page component*: Rejected. Declarative nested route wrappers keep protection logic centralized and prevent accidental omissions when adding new routes.
+
+**Trade-offs:** - Stub page components are co-located in `App.tsx` temporarily. These will be extracted into their own files once full implementations begin, at which point `App.tsx` will contain only routing structure.
+
+---
+
+## [2026-06-10 20:12] Bug Fix: Auth Form Submission — Token Key Mismatch & 401 Interceptor Hard Reload
+
+**Files Changed:** `apps/frontend/src/pages/Register.tsx`, `apps/frontend/src/pages/login.tsx`, `apps/frontend/src/utils/api.ts`
+
+**Bugs Fixed:**
+
+1. **Token key mismatch (root cause):** `auth.service.ts` returns `{ accessToken, user }` but both pages read `response.data.token` (undefined). `setAuth` stored `undefined` as the token, causing `ProtectedRoute` to immediately redirect back to `/login` after every successful auth call — making it appear as if the form did nothing and no data was written.
+   - Fix: `response.data.token` → `response.data.accessToken` in both `Register.tsx` and `login.tsx`.
+
+2. **401 interceptor hard page reload on auth pages:** `api.ts` unconditionally called `window.location.href = '/login'` on any 401. When login failed with wrong credentials, the interceptor reloaded the page before the component `catch` block could run, wiping the console and blocking the error UI.
+   - Fix: Added a `publicPaths` guard — the hard redirect is skipped when `window.location.pathname` is `/login` or `/register`.
+
+3. **Missing `console.error`:** Errors were surfaced in UI but never logged to the developer console.
+   - Fix: Added `console.error` with status + response body (Axios errors) and raw error (unexpected) in both pages.
+
+**Backend Assessment:** No changes required. `asyncHandler` + global error handler in `app.ts` already forward and log errors correctly.
+
+---
+
+## [2026-06-10 20:33] Frontend Routing & Onboarding Implementation
+
+### Shared Context
+- Designed and built the client-side routing hierarchy and user preference capture layer.
+
+### Component/Feature Decisions
+- **Route Guards (`src/components/RouteGuards.tsx`)**: Created declaration-based conditional wrappers (`ProtectedRoute`, `PublicRoute`, `OnboardingGuard`, `DashboardGuard`) that read live Zustand state to automatically evaluate session validity and onboarding completeness.
+- **Auth UI (`src/pages/Login.tsx`, `src/pages/Register.tsx`)**: Developed standard login and sign-up interfaces wired into the central Axios interceptor layer to capture and digest backend token responses seamlessly.
+- **Onboarding Interface (`src/pages/Onboarding.tsx`)**: Implemented an interactive multi-step preference matrix with granular custom selectors to feed formatted asset lists, content tracks, and investor archetypes directly into the state orchestration pipeline.
+
+### Human-AI Collaboration Notes
+- Maintained a strict frontend scope focus during debugging by decoupling temporary system 500 exceptions from client-side visual design validations.
