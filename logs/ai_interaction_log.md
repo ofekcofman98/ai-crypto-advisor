@@ -117,3 +117,18 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 **Alternatives Considered:** - *Creating separate endpoints for each section type (e.g., `/api/feedback/news`)*: Rejected. A single generic endpoint with robust Zod enum validation scales better and reduces frontend integration complexity.
 
 **Trade-offs:** - Storing `contentSnippet` directly in the feedback table introduces slight data duplication (denormalization) if the content is static, but heavily optimizes future analytical queries for model fine-tuning without requiring complex JOINs to external content tables.
+
+---
+
+## [2026-06-10 19:12] Frontend Initialization & Core Infrastructure
+
+### Shared Context
+- Initialized React + TypeScript frontend application via Vite.
+- Configured Tailwind CSS with the project's Dark Crypto Mode design tokens (`void`, `surface`, `border`, etc.).
+
+### Component/Feature Decisions
+- **Auth Store (`src/store/authStore.ts`)**: Built a global state using Zustand combined with the `persist` middleware to safely cache JWT tokens and onboarding flags across browser reloads.
+- **API Client (`src/utils/api.ts`)**: Implemented a centralized Axios client with custom interceptors to automatically attach the Bearer token and gracefully catch 401 token expirations for programmatic login redirection.
+
+### Human-AI Collaboration Notes
+- Handled Windows-specific NPM pathing/CLI quirks by pivoting from automated initialization to explicit manual design-token and PostCSS file declarations.
