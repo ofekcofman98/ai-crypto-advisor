@@ -17,6 +17,7 @@ import cookieParser from 'cookie-parser';
 import { ZodError } from 'zod';
 
 import authRouter from './modules/auth/auth.router';
+import onboardingRouter from './modules/onboarding/onboarding.router';
 import { AppError } from './shared/errors/AppError';
 
 const app: Application = express();
@@ -37,6 +38,7 @@ app.use(cookieParser()); // Populates req.cookies — required by /refresh and /
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 app.use('/api/auth', authRouter);
+app.use('/api/onboarding', onboardingRouter);
 
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 
