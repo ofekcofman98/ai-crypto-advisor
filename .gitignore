@@ -1,1 +1,28 @@
-node_modules
+# Dependencies
+node_modules/
+/dist
+/build
+
+# Environment Variables (CRITICAL)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Databases & Logs
+*.log
+sqlite.db

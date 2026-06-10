@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../utils/api';
 
 export interface VotePayload {
@@ -38,13 +39,17 @@ export function useSubmitFeedback() {
           );
           return [...filtered, newVote];
         });
-  
+
+        toast.success('Feedback registered');
+        
         return { previousVotes };
       },
       onError: (_err, _newVote, context) => {
         if (context?.previousVotes) {
           queryClient.setQueryData(['my-votes'], context.previousVotes);
         }
+
+        toast.error('Failed to sync feedback with server.');
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: ['my-votes'] });
