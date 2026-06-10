@@ -256,3 +256,20 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 - All 4 dashboard cards now have correct, resilient endpoints: `/prices`, `/news`, `/insight`, `/meme`.
 - `GET /feedback/my-votes` now resolves with live data or an empty array instead of 404.
 - Every external API call (CoinGecko, CryptoPanic, OpenRouter) and every DB query has a typed mock fallback returning `200 OK`.
+
+---
+
+## [2026-06-10 22:55] Advanced Frontend Refactoring & Architecture Optimization
+
+### Shared Context
+- Executed a major clean-code and decoupling overhaul across the layout, route validation, and form orchestration matrices.
+
+### Component/Feature Decisions
+- **Zustand Re-rendering Performance Core (`src/components/RouteGuards.tsx`)**: Refactored all application routing guards (`ProtectedRoute`, `PublicRoute`, `OnboardingGuard`, `DashboardGuard`) to abandon full-store object destructuring. Implemented clean atomic selectors (`state => state.field`) to target specific dependencies, drastically lowering redundant parent view lifecycle ticks.
+- **Form Card Layout Adaptability (`src/components/ui/AuthCard.tsx`)**: Re-engineered the session box container to support custom widths via an optional `maxWidthClassName` prop (defaulting to `max-w-md` for standard forms, overridden with `max-w-2xl` for survey matrix formats). This resolved viewport structural compression bugs during user persona steps while enforcing central component style re-use.
+- **Shared Input Primitives (`src/components/ui/AuthInput.tsx`)**: Extracted a completely generic, DRY-compliant icon-slotted text input element to centralize custom interaction metrics and design consistency across core entry fields.
+- **Dynamic Array Option Lists (`src/components/ui/SelectionGrid.tsx`)**: Standardized custom matrix option inputs into an isolated, multi-mode selector primitive. Built support for standard string options and object variants with contextual string properties, decoupling local state configuration files from core layout styles.
+- **Type Safety Enhancements (`src/components/VotingButtons.tsx`)**: Eradicated remaining `any` parameters in array methods and mapped local iterations to explicit interface entities (`UserVoteItem`), securing type safety boundaries.
+
+### Human-AI Collaboration Notes
+- Capitalized on active design intuition and structural checking (`npm run build`) to safely rollback rigid layout rules, upgrading them into responsive and adaptable design elements.

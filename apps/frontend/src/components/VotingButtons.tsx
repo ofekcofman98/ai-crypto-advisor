@@ -6,12 +6,18 @@ interface VotingButtonsProps {
     contentId: string;
 }
 
+interface UserVoteItem {
+    sectionType: string;
+    contentId: string;
+    vote: 'UP' | 'DOWN';
+  }
+
 export default function VotingButtons({ sectionType, contentId }: VotingButtonsProps) {
     const { data: votes } = useUserVotes();
     const { mutate: submitVote } = useSubmitFeedback();
   
     const currentVote = votes?.find(
-      (v: any) => v.sectionType === sectionType && v.contentId === contentId
+      (v: UserVoteItem) => v.sectionType === sectionType && v.contentId === contentId
     )?.vote;
   
     const handleVote = (voteType: 'UP' | 'DOWN') => {
