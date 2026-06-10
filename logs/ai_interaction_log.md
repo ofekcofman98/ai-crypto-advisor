@@ -66,3 +66,37 @@ Key decisions:
 **Alternatives Considered:** - *Multi-Layer Architecture (Controller -> Service -> Repository)*: Evaluated but rejected. Since Prisma natively generates an incredibly robust, type-safe data abstraction layer, an additional explicit Repository class would function as a passive pass-through interface, adding file bloat without structural utility.
 
 **Trade-offs:** - Combining input parsing and HTTP status mappings into the Router layer increases the endpoint specification length, but gathers payload validation, routing logic, and data orchestration contracts into a single, comprehensive source of truth for each endpoint.
+
+---
+
+## [2026-06-10 12:14] — Onboarding Module + Auth Middleware
+
+**Type:** Feature
+
+**Files Affected:** `apps/backend/src/modules/onboarding/onboarding.types.ts`, `apps/backend/src/modules/onboarding/onboarding.schema.ts`, `apps/backend/src/modules/onboarding/onboarding.router.ts`, `apps/backend/src/middleware/authMiddleware.ts`, `apps/backend/src/@types/express/index.d.ts`, `apps/backend/src/app.ts`
+
+**Decision / Action:**
+Implemented the Onboarding module following the same Route-Centric pattern established by the Auth module. The single `POST /api/onboarding` endpoint is protected by a new `authMiddleware` that verifies the Bearer JWT and attaches `req.user` to the request. The route validates the incoming body against a Zod schema (enforcing `InvestorType` and `ContentType` as Prisma native enums, and requiring at least one item in both arrays), then executes a single atomic Prisma nested write: `prisma.preference.update` with a nested `user.update` that flips `hasCompletedOnboarding` to `true` in the same database round-trip. A global Express `Request` type augmentation (`src/@types/express/index.d.ts`) was added so `req.user` is fully typed across the application without casting.
+
+**Alternatives Considered:** Using `prisma.$transaction([...])` for the two-table update. Rejected in favour of Prisma's nested write syntax, which is cleaner, achieves the same atomicity guarantee, and avoids the boilerplate of constructing an explicit transaction array.
+
+**Trade-offs:** The non-null assertion `req.user!.id` inside the route handler is safe here because the route is always preceded by `authMiddleware` (applied via `router.use`), which guarantees `req.user` is set before any handler runs. A stricter alternative would be a helper that throws an `AppError` instead of asserting, but that adds indirection without meaningful safety gain in this context.
+
+---
+
+## [2026-06-10 15:15] — Feature: Resilient Dashboard API & AI Insights Integration
+
+**Type:** Feature | Integration | Schema  
+**Files Affected:**
+- `apps/backend/src/modules/dashboard/dashboard.router.ts`
+- `apps/backend/src/modules/dashboard/dashboard.service.ts`
+- `apps/backend/src/modules/dashboard/dashboard.mock.ts`
+- `apps/backend/src/modules/dashboard/dashboard.types.ts`
+- `apps/backend/src/modules/dashboard/ai.service.ts`
+- `apps/backend/src/app.ts`
+
+**Decision / Action:** Implemented the complete core Dashboard data aggregation layer under the protected `/api/dashboard` sub-router. Engineered multi-source asynchronous adapters linking CoinGecko (market prices, expanded to 6 core assets) and CryptoPanic (filtered hot news headlines). Eliminated all occurrences of the `any` type by introducing strong raw payload definitions (`CryptoPanicRawPost`) and type-safe output boundaries (`CryptoPricesResponse`). Integrated an abstract OpenRouter AI execution service leveraging `google/gemini-2.5-flash` to process user-preference state vectors (Investor Type + Asset tokens) alongside current spot pricing to output stateless 3-sentence action summaries. Built resilient catch-all static memory fallbacks across all dynamic integrations to guarantee continuous uptime under external vendor throttling.
+
+**Alternatives Considered:** - *Relying on interactive prompt schemas inside core routers*: Rejected to isolate third-party transport latency away from network routes. Separating pure AI text synthesis into `ai.service.ts` ensures isolated mock coverage and loose database coupling.
+
+**Trade-offs:** - Hardcoding asset ticker mappings within the localized domain layer introduces a tiny tech debt footprint (marked with a TODO), but removes early over-engineering by avoiding dynamic asset configuration database lookups during MVP review cycles.
