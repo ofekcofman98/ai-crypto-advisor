@@ -1,5 +1,8 @@
 # Project Overview — Moveo AI Crypto Advisor
 
+A full-stack Crypto Advisor web application designed for the Moveo coding assessment. The platform onboard users, aggregates real-time cryptocurrency data and market news, and leverages an LLM (AI) to generate personalized trading insights.
+
+
 > Cross-reference: `docs/architecture.md` (system blueprint), `docs/specs_features.md` (feature specs).
 
 ---
@@ -18,14 +21,13 @@
 
 ## 1. Assignment Summary
 
-<!-- **Client:** Moveo (internal coding assessment)   -->
-**Goal:** Build and deploy a fully functional, personalized crypto investor dashboard web application.
+**Goal:** Build a functional, personalized crypto investor dashboard web application.
 
-The product has three distinct phases:
+The product consists of three phases:
+1. **Authentication** — Users register with email, name, and password. Login is based on a standard, secure JWT token returned directly in the response.
+2. **Onboarding** — A first-login quiz that captures the user's crypto interests, investor archetype, and preferred content types. Answers persist directly to the database as user preferences.
+3. **Dashboard** — A preference-driven dashboard composed of four content sections: Market News, Live Coin Prices, an AI-generated Insight of the Day, and a Fun Crypto Meme. Each section can be upvoted or downvoted.
 
-1. **Authentication** — Users register with email + name + password; login is JWT-based.
-2. **Onboarding** — A first-login quiz that captures the user's crypto interests, investor archetype, and preferred content types. Answers persist to the database as user preferences.
-3. **Dashboard** — A daily-refreshing, preference-driven dashboard composed of four content sections: Market News, Live Coin Prices, an AI-generated Insight of the Day, and a Fun Crypto Meme. Each section is individually voteable (👍 / 👎), with votes stored for future model improvement pipelines.
 
 The application must be deployed and publicly accessible. The GitHub repository and database access must also be submitted as part of the assessment deliverables.
 
@@ -37,13 +39,13 @@ The application must be deployed and publicly accessible. The GitHub repository 
 
 | # | Feature | Scope |
 |---|---|---|
-| 1 | User Registration & Login | JWT access + refresh tokens, bcrypt password hashing |
+| 1 | User Registration & Login | Standard JWT authentication, bcrypt password hashing |
 | 2 | Onboarding Quiz | 3-question preference capture, saved to DB |
 | 3 | Market News Section | CryptoPanic API with static-JSON fallback, filtered by user interests |
 | 4 | Coin Prices Section | CoinGecko API, live prices for user's chosen assets |
 | 5 | AI Insight of the Day | OpenRouter (LLM) prompt personalized to user's investor type and assets |
-| 6 | Fun Crypto Meme | Randomized delivery pipeline via curated static JSON to eliminate external network dependencies |
-| 7 | Feedback Voting | Per-section thumbs-up/down, optimistic UI, persisted to DB |
+| 6 | Fun Crypto Meme | Randomized delivery pipeline via curated static JSON |
+| 7 | Feedback Voting | Per-section thumbs-up/down, persisted to DB |
 | 8 | AI Interaction Log | Mandatory documentation of all AI-assisted decisions (`logs/ai_interaction_log.md`) |
 | 9 | (Bonus) Training Pipeline Design | Written spec: how feedback data feeds into prompt refinement and future fine-tuning |
 
@@ -53,17 +55,16 @@ The application must be deployed and publicly accessible. The GitHub repository 
 
 ### 3.1 New User
 
-A user arrives at the root URL and is redirected to `/login`. They click "Create an account" and land on `/register`. After submitting a valid email, display name, and password (with real-time validation feedback), a JWT access token is issued and stored in the Zustand auth store.
+A user registers at `/register`. After submitting a valid email, display name, and password, a JWT token is issued and stored securely on the client side.
 
-Because this is their first login, the backend sets a `hasCompletedOnboarding: false` flag, and the frontend redirects to `/onboarding`.
+Because this is their first login, `hasCompletedOnboarding` is set to `false`, and the user is redirected to `/onboarding`.
 
-The onboarding page presents three steps in sequence:
+The onboarding quiz captures:
+* **Crypto assets** (e.g., BTC, ETH, SOL)
+* **Investor type** (e.g., HODLer, Day Trader)
+* **Content preferences** (e.g., Market News, Charts)
 
-- **Step 1:** Which crypto assets interest you? (multi-select chips: BTC, ETH, SOL, BNB, ADA, DOGE, etc.)
-- **Step 2:** What type of investor are you? (single-select: HODLer, Day Trader, NFT Collector, DeFi Explorer)
-- **Step 3:** What kind of content would you like to see? (multi-select: Market News, Charts, Social, Fun)
-
-On submission, preferences are `POST`-ed to `/api/onboarding`, saved in the `preferences` table, and `hasCompletedOnboarding` is set to `true`. The user is redirected to `/dashboard`.
+On submission, preferences are saved to the database, `hasCompletedOnboarding` becomes `true`, and the user is sent to the dashboard.
 
 ### 3.2 Returning User
 
@@ -81,41 +82,10 @@ When the access token (15-minute TTL) expires, the Axios response interceptor si
 
 ## 4. Tech Stack - Choices and Rationale
 
-### 4.1 Frontend
-
-**React 18 + TypeScript (via Vite)**  
-React is specified by the assignment. Vite is chosen over Create React App due to its substantially faster dev server and build pipeline — meaningful when iterating quickly on a timed assessment. TypeScript strict mode is non-negotiable: it catches API shape mismatches (the most common integration bug in full-stack projects) at compile time rather than runtime.
-
-**Tailwind CSS v3**  
-Tailwind enforces design consistency through a centralized config token system. Unlike CSS Modules or styled-components, Tailwind co-locates style intent with markup without runtime overhead. The custom design system tokens (colors, fonts, spacing) live entirely in `tailwind.config.ts`, making global redesigns a one-file operation. There is no light mode — this is a crypto dashboard; dark mode is the only appropriate aesthetic.
-
-**Zustand**  
-Redux is overkill for this scope. Zustand provides a minimal, boilerplate-free global store for auth state (user, access token) and onboarding status. It integrates cleanly with TanStack Query for server state.
-
-**TanStack Query (React Query)**  
-Handles all server-state concerns on the dashboard: caching (prevents redundant API calls on tab refocus), background refetch, per-section loading and error states, and optimistic mutations for feedback voting. This keeps component code declarative and eliminates manual `useEffect` data-fetching patterns.
-
-### 4.2 Backend
-
-**Node.js 20 LTS + Express 4 + TypeScript**  
-Node.js maintains language consistency across the full stack — TypeScript types for API DTOs can be referenced from a shared location by both frontend and backend. Express is chosen for its minimalism and near-universal familiarity; no magic, no conventions to fight when structuring a modular codebase. Fastify is a valid alternative for performance, but Express's ecosystem depth is more valuable here.
-
-**Prisma ORM**  
-Prisma's schema-first approach makes `schema.prisma` the single source of truth for the database structure. Auto-generated, type-safe query builders eliminate an entire category of runtime errors (wrong column names, missing null checks). Migrations are versioned and reproducible. The introspection tooling is also useful for giving the Moveo reviewer `Access to DB` as required by the deliverables.
-
-**PostgreSQL via Supabase**  
-PostgreSQL's relational model is a natural fit: users have one preferences record and many feedback records; referential integrity is enforced at the DB level. Supabase provides a free-tier hosted PostgreSQL instance, a visual database explorer (satisfies the "Access to DB" deliverable without a separate tool), and automatic SSL. SQLite was considered for simplicity but ruled out due to concurrency limitations in a deployed context.
-
-### 4.3 Authentication
-
-**JWT (Access + Refresh Token Pattern)**  
-- Access tokens: short-lived (15 minutes), stored in memory (Zustand), sent as `Authorization: Bearer` header.
-- Refresh tokens: long-lived (7 days), stored as `HttpOnly; Secure; SameSite=Strict` cookies, never accessible to JavaScript.
-- This pattern prevents XSS-based token theft (no `localStorage`) while remaining stateless.
-- Token rotation: each refresh call issues a new refresh token and invalidates the old one.
-
-**bcrypt (cost factor 12)**  
-Standard practice. The cost factor of 12 provides ~250ms hashing time, rendering brute-force attacks computationally infeasible while remaining acceptable for user-facing login latency.
+* **Frontend:** React (Vite), TypeScript, Tailwind CSS, Zustand (State Management), TanStack Query.
+* **Backend:** Node.js, Express, TypeScript, Prisma ORM.
+* **Database:** PostgreSQL hosted on Supabase.
+* **Authentication:** Standard JWT token expiration pattern. Passwords are encrypted safely using `bcryptjs`.
 
 ---
 
@@ -148,8 +118,9 @@ The visual signature is a subtle animated gradient border on active/hovered dash
 | CryptoPanic API returning slowly or being unavailable | 5-minute cache; static `data/news-fallback.json` with 10 pre-curated articles |
 | OpenRouter LLM latency or quota exhaustion | 1-hour per-user insight cache in `dashboard_cache` table; hardcoded fallback insight for common investor types |
 | Render free tier cold starts (~30s) | Health-check ping strategy; frontend shows a "Dashboard loading..." skeleton during initial connection |
-| External media API downtime / Reddit scrape failures | Enforce primary meme delivery from localized static `data/memes.json` manifest |
-| Session expiry mid-session | Axios interceptor silently refreshes token; user never sees an unexpected logout |
+| External media API downtime | Enforce primary meme delivery from localized static `data/memes.json` manifest |
+| Token Expiration mid-session | Handled gracefully by redirecting the user back to `/login` upon receiving a 401 response |
+
 
 ---
 
@@ -159,4 +130,4 @@ The visual signature is a subtle animated gradient border on active/hovered dash
 - [ ] **Deployed App URL** — `https://moveo-crypto-advisor.vercel.app`
 - [ ] **AI Interaction Log** — `logs/ai_interaction_log.md` (updated throughout development)
 - [ ] **Database Access** — Supabase project shared with reviewer (or connection string in submission email)
-- [ ] **Bonus: Training Pipeline Design** — Section 6 of `docs/specs_features.md`
+- [ ] **Bonus: Training
