@@ -100,3 +100,20 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 **Alternatives Considered:** - *Relying on interactive prompt schemas inside core routers*: Rejected to isolate third-party transport latency away from network routes. Separating pure AI text synthesis into `ai.service.ts` ensures isolated mock coverage and loose database coupling.
 
 **Trade-offs:** - Hardcoding asset ticker mappings within the localized domain layer introduces a tiny tech debt footprint (marked with a TODO), but removes early over-engineering by avoiding dynamic asset configuration database lookups during MVP review cycles.
+
+---
+
+## [2026-06-10 17:00] — Feature: Generalized Feedback Module & AI Training Hooks
+
+**Type:** Feature | Database
+**Files Affected:**
+- `apps/backend/src/modules/feedback/feedback.router.ts`
+- `apps/backend/src/modules/feedback/feedback.types.ts`
+- `apps/backend/src/modules/feedback/feedback.schema.ts`
+- `apps/backend/src/modules/feedback/feedback.service.ts`
+
+**Decision / Action:** Finalized the feedback module to handle universal upvotes/downvotes across all dashboard sections (`NEWS`, `PRICE`, `AI_INSIGHT`, `MEME`). Aligned the routing logic with the optimized Prisma schema utilizing a compound unique constraint (`userId_sectionType_contentId`) for atomic `upsert` operations. Integrated the `contentSnippet` field as a payload parameter to fulfill the bonus requirement, laying the architectural groundwork for future LLM training loops (allowing analysts to correlate negative feedback with specific context snippets).
+
+**Alternatives Considered:** - *Creating separate endpoints for each section type (e.g., `/api/feedback/news`)*: Rejected. A single generic endpoint with robust Zod enum validation scales better and reduces frontend integration complexity.
+
+**Trade-offs:** - Storing `contentSnippet` directly in the feedback table introduces slight data duplication (denormalization) if the content is static, but heavily optimizes future analytical queries for model fine-tuning without requiring complex JOINs to external content tables.
