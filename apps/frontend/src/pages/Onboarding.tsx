@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { Coins, UserCheck, Layout, Loader2, CheckCircle2 } from 'lucide-react';
+import { Coins, UserCheck, Layout, Loader2 } from 'lucide-react';
 import api from '../utils/api';
 import { useAuthStore } from '../store/authStore';
 import SelectionGrid from '../components/ui/SelectionGrid';
