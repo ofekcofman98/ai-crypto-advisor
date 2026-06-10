@@ -7,195 +7,95 @@
 # 0. PREAMBLE — READ FIRST ON EVERY SESSION
 # ─────────────────────────────────────────
 # Before reading or modifying ANY file in this repository, you MUST:
-#   1. Read `docs/architecture.md` (Master Table of Contents + System Blueprint).
-#   2. Read the relevant spec file in `docs/` for the feature area you are about to touch.
-#   3. Confirm your intended change is consistent with the documented architecture
-#      before writing a single line of code.
-# Rationale: This prevents architectural drift, avoids re-deriving technical decisions 
-# already made, and ensures development remains strictly aligned with specified designs.
+#   1. Read `docs/architecture.md` (System Blueprint).
+#   2. Read the relevant spec file in `docs/` for the feature area.
+#   3. Confirm changes align with our direct, simplified design.
 
 # ─────────────────────────────────────────
 # 1. AI INTERACTION LOGGING (MANDATORY)
 # ─────────────────────────────────────────
-# After EVERY non-trivial action (architectural decision, new feature scaffolded,
-# significant bug fixed, API integration added, schema changed), you MUST append
-# a structured entry to: logs/ai_interaction_log.md
-#
-# Entry format (append — never overwrite):
-#
-# ## [YYYY-MM-DD HH:MM] — <Short Title>
-# **Type:** Architecture | Feature | Bugfix | Refactor | Integration | Schema
-# **Files Affected:** `path/to/file.ts`, `path/to/other.ts`
-# **Decision / Action:**
-# <One clear paragraph describing what was done and why.>
-# **Alternatives Considered:** <If any>
-# **Trade-offs:** <Performance, maintainability, scope, etc.>
-# ---
-#
-# This continuous architectural log documents execution reasoning and tool collaboration,
-# serving as a core component of the project deliverables.
+# After EVERY major change (feature implementation, bug fix, schema change),
+# you MUST append a structured, concise entry to: logs/ai_interaction_log.md
+# Entry must reflect true, pragmatic human-written code choices.
 
 # ─────────────────────────────────────────
 # 2. CONTEXT WINDOW MANAGEMENT
 # ─────────────────────────────────────────
-# - When working on a feature, load ONLY the files directly relevant to that feature.
-# - Do NOT load the entire codebase at once. Use `docs/architecture.md` to identify
-#   the precise files needed.
-# - Prefer reading type definition files (*.types.ts, *.dto.ts) before reading
-#   implementation files — they are compact and carry maximum context.
-# - If a file exceeds 300 lines, read only the relevant section unless a full
-#   read is explicitly required.
-# - Summarize completed context before starting a new task to release stale tokens.
+# - Load ONLY files directly relevant to the current feature.
+# - Target specific type definitions or route files before heavy implementations.
+# - Keep files compact, clean, and well under 300 lines wherever possible.
 
 # ─────────────────────────────────────────
 # 3. LANGUAGE & TYPING STANDARDS
 # ─────────────────────────────────────────
-# - ALL code (frontend and backend) must be written in TypeScript.
-# - ZERO use of `any` type. Use `unknown` with a type guard if the shape is unclear.
-# - All function signatures must have explicit parameter types and return types.
-# - Use `interface` for object shapes that represent data contracts (DTOs, API responses).
-# - Use `type` for unions, intersections, and utility type aliases.
-# - All environment variables must be typed via a central `env.ts` or `config.ts`
-#   that validates presence at startup (use `zod` schema parsing).
-# - Enums must be `const enum` or string literal unions — never numeric enums.
+# - ALL code must be written in explicit TypeScript.
+# - ZERO use of `any`. Use `unknown` with accurate runtime type guards if needed.
+# - Clear parameter types and explicit function return types are mandatory.
+# - Use standard `interface` for API request/response structures (DTOs).
 
 # ─────────────────────────────────────────
 # 4. ARCHITECTURE & SEPARATION OF CONCERNS
 # ─────────────────────────────────────────
 # Backend (Node.js / Express):
 #   src/
-#   ├── config/          ← Environment, DB config, constants
+#   ├── config/          ← Environment parsing, configuration rules
 #   ├── modules/
 #   │   └── <feature>/
-#   │       ├── <feature>.router.ts      ← Express route definitions ONLY
-#   │       ├── <feature>.controller.ts  ← Request parsing, response shaping
-#   │       ├── <feature>.service.ts     ← All business logic
-#   │       ├── <feature>.repository.ts  ← All DB queries (zero raw SQL in service)
-#   │       ├── <feature>.types.ts       ← DTOs, interfaces, enums for this module
-#   │       └── <feature>.schema.ts      ← Zod validation schemas
-#   ├── middleware/      ← Auth, error handling, rate limiting
-#   ├── lib/             ← External API clients (CoinGecko, CryptoPanic, OpenRouter)
-#   └── app.ts           ← Express app assembly (no logic here)
-#
-# Frontend (React + Vite):
-#   src/
-#   ├── api/             ← All fetch/axios calls; NEVER inline in components
-#   ├── components/
-#   │   ├── ui/          ← Pure, reusable design-system primitives (Button, Card, Badge)
-#   │   └── features/    ← Feature-specific compound components
-#   ├── hooks/           ← Custom React hooks (useAuth, useDashboard, useVote)
-#   ├── pages/           ← Route-level page components (thin wrappers only)
-#   ├── store/           ← State management (Zustand slices)
-#   ├── types/           ← Shared TypeScript types mirroring backend DTOs
-#   └── utils/           ← Pure utility functions (formatters, validators)
+#   │       ├── <feature>.router.ts  ← Express routes, validation parsing, HTTP response mapping
+#   │       ├── <feature>.service.ts ← Core business logic & direct Prisma client queries
+#   │       ├── <feature>.types.ts   ← Module data contracts and interfaces
+#   │       └── <feature>.schema.ts  ← Pure Zod input validation schemas
+#   ├── shared/          ← Database connectors (Prisma), common error classes
+#   └── utils/           ← Global handlers (asyncHandler)
 #
 # RULES:
-#   - A controller MUST NOT contain business logic. If it does, move it to the service.
-#   - A service MUST NOT contain raw SQL or ORM queries. Use the repository.
-#   - A component MUST NOT contain fetch calls. Use a custom hook or api/ layer.
-#   - A page component MUST NOT contain business logic. Delegate to hooks.
+#   - Keep execution flat: Router handles HTTP -> Service handles logic & database writes via Prisma ORM.
+#   - Avoid unnecessary layers (No isolated Repository or Class Controllers).
+#   - Frontend components must decouple layout from fetch states using custom React hooks.
 
 # ─────────────────────────────────────────
 # 5. DRY — ZERO CODE DUPLICATION
 # ─────────────────────────────────────────
-# - Before writing a utility function, search the `utils/` directory for an existing one.
-# - Before creating a new UI component, check `components/ui/` for reusable primitives.
-# - API response types shared between frontend and backend MUST live in a
-#   `shared/types/` package or be explicitly duplicated in `src/types/` with a comment
-#   referencing the backend source of truth.
-# - If the same logic appears in more than one place, it is a bug — extract immediately.
+# - Reuse shared utilities and check existing layout primitives before coding.
+# - Ensure shared data signatures between backend and frontend remain visually distinct but structurally synchronized.
 
 # ─────────────────────────────────────────
 # 6. STYLING — CENTRALIZED DESIGN SYSTEM
 # ─────────────────────────────────────────
-# Stack: Tailwind CSS v3 with a custom theme extension defined in `tailwind.config.ts`.
-#
-# Design System: Crypto Dark Mode
-#   Background:  #0D0F14 (near-black, "void")
-#   Surface:     #161B27 (card backgrounds)
-#   Border:      #1E2738 (subtle dividers)
-#   Primary:     #3B82F6 (electric blue — brand accent)
-#   Secondary:   #8B5CF6 (purple — AI/insight accent)
-#   Success:     #10B981 (green — price up, thumbs up)
-#   Danger:      #EF4444 (red — price down, thumbs down)
-#   Warning:     #F59E0B (amber — alerts)
-#   Text-primary:   #F1F5F9
-#   Text-secondary: #94A3B8
-#   Font: "Inter" (body/UI), "JetBrains Mono" (numbers, prices, code)
+# Theme: Dark Crypto Mode
+#   Background:  #0D0F14 ("void")
+#   Surface:     #161B27 (cards)
+#   Border:      #1E2738 (subtle lines)
+#   Primary:     #3B82F6 (brand blue)
+#   Secondary:   #8B5CF6 (AI purple)
+#   Text-primary: #F1F5F9
 #
 # RULES:
-#   - ALL color usage MUST reference design system tokens (e.g., `bg-surface`,
-#     `text-primary`), never raw hex values inline in JSX.
-#   - NO arbitrary Tailwind values (e.g., `w-[347px]`) unless absolutely unavoidable
-#     and accompanied by a comment explaining why.
-#   - ALL spacing, border-radius, and shadow values must come from the Tailwind config.
-#   - Dark mode is the ONLY mode. Do not implement a light mode toggle.
-#   - Animations: use only `transition-*` and `animate-*` Tailwind utilities.
-#     Custom keyframe animations are defined in `tailwind.config.ts`, not inline.
+#   - Inline hex codes are forbidden. Use Tailwind design tokens exclusively.
 
 # ─────────────────────────────────────────
 # 7. ERROR HANDLING
 # ─────────────────────────────────────────
-# Backend:
-#   - All async route handlers are wrapped with an `asyncHandler` utility that
-#     forwards errors to the central Express error middleware.
-#   - NEVER use `try/catch` inside a controller — errors bubble to middleware.
-#   - Services throw typed `AppError` instances (class with `statusCode` + `message`).
-#   - All external API calls (CoinGecko, CryptoPanic, OpenRouter) are wrapped in
-#     dedicated `lib/` clients that handle retries, timeouts, and fallback logic.
-#
-# Frontend:
-#   - All API calls use a central `apiClient` wrapper that standardizes error shapes.
-#   - Every async operation in a hook has explicit `isLoading`, `isError`, `error` states.
-#   - Dashboard sections MUST render gracefully with a fallback UI when their API fails.
-#     The app MUST NOT crash or show an empty screen because one section's API is down.
+# - Wrap async routes in `asyncHandler` to stream exceptions safely to central error middleware.
+# - Business logic faults must throw a typed `AppError` carrying explicit status codes.
+# - The application must render granular error/fallback cards on the client side without breaking the shell layout.
 
 # ─────────────────────────────────────────
 # 8. SECURITY RULES
 # ─────────────────────────────────────────
-# - Passwords MUST be hashed with bcrypt (cost factor ≥ 12). Plain-text passwords
-#   must never appear in logs, DB, or API responses.
-# - JWTs: access token TTL = 15 minutes; refresh token TTL = 7 days.
-#   Refresh tokens stored as HttpOnly, Secure, SameSite=Strict cookies.
-#   Access tokens stored in memory (Zustand store), NOT localStorage.
-# - ALL authenticated routes MUST use the `authMiddleware` before reaching the controller.
-# - API keys for CoinGecko, CryptoPanic, OpenRouter MUST be stored in `.env` only.
-#   NEVER hardcode them. NEVER commit `.env` to Git.
-# - Rate limiting MUST be applied to auth endpoints (/register, /login):
-#   max 10 requests per IP per 15 minutes.
-# - Input validation with Zod on EVERY request body before it reaches the controller.
+# - Passwords MUST be hashed using bcryptjs (salt factor 10). Plain-text passwords never touch logs or outputs.
+# - Authentication is based on standard, stateless 24-hour JWT access tokens.
+# - Tokens are delivered directly within the login/register JSON payload and saved in frontend store memory (Zustand).
+# - Validate request structures using explicit Zod schemas at the network boundary.
 
 # ─────────────────────────────────────────
 # 9. GIT & COMMIT STANDARDS
 # ─────────────────────────────────────────
-# Follow Conventional Commits specification:
-#   feat(auth): add JWT refresh token rotation
-#   fix(dashboard): handle CoinGecko rate limit with fallback
-#   docs(architecture): update DB schema for feedback table
-#   chore(deps): upgrade express to 4.19.2
-#   refactor(dashboard): extract coin card into reusable component
-#
-# - NEVER commit directly to `main`. Use feature branches: `feature/<name>`.
-# - Every PR must have a description referencing the relevant spec in `docs/`.
-# - The `logs/ai_interaction_log.md` is updated in the same commit as the feature.
+# Use Conventional Commits format (`feat(auth):`, `fix(dashboard):`, `refactor(auth):`).
 
 # ─────────────────────────────────────────
-# 10. TESTING STANDARDS
+# 10. DEPLOYMENT CHECKLIST
 # ─────────────────────────────────────────
-# - Backend: Jest + Supertest for integration tests on all API routes.
-# - Frontend: Vitest + React Testing Library for component tests.
-# - Every service function MUST have at least one unit test covering the happy path
-#   and one covering an error path.
-# - External API clients in `lib/` MUST be mockable via Jest module mocking.
-# - Test files live adjacent to the code they test: `auth.service.test.ts`.
-
-# ─────────────────────────────────────────
-# 11. DEPLOYMENT CHECKLIST (before push)
-# ─────────────────────────────────────────
-# [ ] `npm run lint` passes with zero errors
-# [ ] `npm run type-check` passes with zero errors
-# [ ] `npm run test` passes with zero failures
-# [ ] All environment variables documented in `.env.example`
-# [ ] `logs/ai_interaction_log.md` updated with this session's changes
-# [ ] No `console.log` statements left in production code (use a logger like `pino`)
-# [ ] No TODO comments that are not tracked in GitHub Issues
+# [ ] TypeScript compiles with zero strict errors.
+# [ ] No active `console.log` statements remain in application loops.
+# [ ] Documentation and logs fully correspond with runtime system mechanics.

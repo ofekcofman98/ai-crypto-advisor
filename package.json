@@ -1,0 +1,19 @@
+{
+    "name": "moveo-crypto-advisor",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "apps/frontend",
+        "apps/backend"
+    ],
+    "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/node": "^25.9.2",
+        "prisma": "^7.8.0",
+        "tsx": "^4.22.4",
+        "typescript": "^6.0.3"
+    }
+}

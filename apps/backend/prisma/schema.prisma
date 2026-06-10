@@ -1,0 +1,87 @@
+// apps/backend/prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+enum InvestorType {
+  HODLER
+  DAY_TRADER
+  NFT_COLLECTOR
+  DEFI_EXPLORER
+}
+
+enum ContentType {
+  MARKET_NEWS
+  CHARTS
+  SOCIAL
+  FUN
+}
+
+enum SectionType {
+  NEWS
+  PRICE
+  AI_INSIGHT
+  MEME
+}
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+model User {
+  id                     String         @id @default(uuid())
+  email                  String         @unique
+  name                   String
+  passwordHash           String
+  hasCompletedOnboarding Boolean        @default(false)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  preference             Preference?
+  feedback               Feedback[]
+
+  @@map("users")
+}
+
+model Preference {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cryptoAssets String[]      // e.g., ["BTC", "ETH"]
+  investorType InvestorType? // Optional until onboarding completed
+  contentTypes ContentType[] // e.g., ["MARKET_NEWS", "CHARTS"]
+  updatedAt    DateTime      @updatedAt
+
+  @@map("preferences")
+}
+
+model Feedback {
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sectionType    SectionType
+  contentId      String      // Unique identifier of the specific asset/article/meme
+  contentSnippet String      // Storing the snippet for pipeline context
+  vote           VoteType
+  createdAt      DateTime    @default(now())
+
+  @@unique([userId, sectionType, contentId])
+  @@map("feedback")
+}
+
+model DashboardCache {
+  id        String   @id @default(uuid())
+  userId    String
+  cacheKey  String   // e.g., "ai_insight"
+  data      Json
+  expiresAt DateTime
+
+  @@unique([userId, cacheKey])
+  @@map("dashboard_caches")
+}
