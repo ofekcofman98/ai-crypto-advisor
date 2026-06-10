@@ -1,5 +1,6 @@
 import { LogOut, LayoutDashboard, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import CardGrid from '../components/dashboard/CardGrid';
 import CoinPricesCard from '../components/dashboard/CoinPricesCard';
 import MarketNewsCard from '../components/dashboard/MarketNewsCard';
 import AiInsightCard from '../components/dashboard/AiInsightCard';
@@ -43,13 +44,13 @@ export default function Dashboard() {
           </div>
   
           {/* The Responsive Grid Shell */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CoinPricesCard />
-            <MarketNewsCard />
-            <AiInsightCard />
-            <MemeCard />
-          </div>
-        </main>
+            <CardGrid>
+                <CoinPricesCard />
+                <MarketNewsCard />
+                <AiInsightCard />
+                <MemeCard />
+            </CardGrid>
+            </main>
       </div>
     );
 }
