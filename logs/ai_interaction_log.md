@@ -523,3 +523,20 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Entry 14 — Onboarding Integration Test Suite
+
+- **Date:** 2026-06-11
+- **Feature:** `Onboarding.spec.tsx` — full integration coverage for the onboarding page
+- **Files Changed:**
+  - Created `pages/Onboarding/Onboarding.spec.tsx`
+- **Key Decisions:**
+  1. `vi.hoisted` builds `mockUpdateOnboardingStatus` and `mockApiPost` before any module evaluation, making them available inside `vi.mock` factory closures without hoisting issues.
+  2. `useAuthStore` mocked as a selector-passthrough: factory receives the selector function and calls it with `{ updateOnboardingStatus: mockUpdateOnboardingStatus }` — mirrors the Login/Register pattern exactly.
+  3. Submit button queried via `getByRole('button', { name: /generate my custom dashboard/i })` — the regex is case-insensitive and avoids brittle exact-string coupling; also avoids expensive SVG ARIA traversal since the button text is a plain string (no icon sibling when not loading).
+  4. Test Case 2 proves the toggle-deselect filter by clicking BTC→ETH→BTC and then submitting; the inspected payload `{ cryptoAssets: ['ETH'] }` is the ground-truth evidence that the array filter ran correctly.
+  5. `axios` itself is not mocked — `api.post` is the only call surface touched by the component, so a direct `vi.mock('../../utils/api')` is sufficient and avoids the internal Axios module graph.
+- **Test Cases:** 3 tests — 1 validation lock, 1 toggle deselection, 1 happy path.
+- **Test Results:** 141 tests passed across 14 test files, 0 failures.
+
+---
+
