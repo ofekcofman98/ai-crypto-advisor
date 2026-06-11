@@ -359,3 +359,25 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
   2. **Depth-corrected inter-component imports:** Dashboard card components (`AiInsightCard`, `CoinPricesCard`, `MarketNewsCard`, `MemeCard`) were moved one level deeper; their `useDashboard`, `VotingButtons`, and `Card` imports were updated from `../../` to `../../../` / `../../` accordingly.
   3. **Named re-exports for `RouteGuards`:** Because `RouteGuards` exports four named guards (not a default), its `index.ts` uses `export { ... } from './RouteGuards'` rather than `export { default }`, keeping the `App.tsx` destructured import intact.
 - **Status:** `tsc --noEmit` exits 0. All 11 components migrated, originals deleted, TS server clean and green.
+
+---
+
+### [2026-06-11] — Frontend Component Test: SelectionGrid
+
+- **What was implemented:** Unit and structural tests for the polymorphic `SelectionGrid.tsx` component using Vitest and React Testing Library.
+- **Architectural Decisions:** 1. Tested code paths for both input contracts (simple `string[]` arrays and detailed `{ id, name, desc }` object configurations) to preserve structural polymorphism.
+  2. Leveraged native string matching and DOM sub-tree traversal (`querySelector('svg')`) to implicitly verify conditional rendering of UI indicators (Lucide icons).
+  3. Asserted strict CSS class injection to validate real-time dynamic theme compilation (`accentColor`) against Tailwind v4 configurations.
+- **Status:** 9 tests passed, 0 failures.
+
+---
+
+
+### [2026-06-11] — Frontend Integration Test: Route Guards & Authentication Routing
+
+- **What was implemented:** Behavioral integration tests for the security matrix in `RouteGuards.tsx` (`ProtectedRoute`, `OnboardingGuard`, `DashboardGuard`, and `PublicRoute`).
+- **Architectural Decisions:**
+  1. Driven in-memory store variations explicitly via `useAuthStore.setState()`, maintaining native TypeScript type-safety while completely avoiding fragile module-level overrides.
+  2. Integrated `localStorage.clear()` globally across test hooks to suppress automatic `persist` hydration leaks.
+  3. Built an isolated execution pipeline utilizing React Router's `<MemoryRouter>` with embedded semantic target strings to mathematically verify redirect operations.
+- **Status:** 11 tests passed, 0 failures.
