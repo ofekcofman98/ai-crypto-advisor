@@ -486,3 +486,20 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Register Integration Test Suite
+- **Date:** 2026-06-11
+- **File:** `apps/frontend/src/pages/Register.spec.tsx`
+- **Feature:** Full registration pipeline — form rendering, happy-path API call, and error-handling.
+- **Architectural Decisions:**
+  1. `vi.hoisted` used to define `mockSetAuth` and `mockApiPost` before module evaluation so they are available inside both `vi.mock` factory closures.
+  2. `../utils/api` mocked as a plain object `{ default: { post: mockApiPost } }` — no real Axios instance is constructed during tests.
+  3. `../store/authStore` mocked as a selector-passthrough (`useAuthStore: vi.fn((selector) => selector({ setAuth: mockSetAuth }))`). Generic `<T>` syntax avoided in `.tsx` to prevent OXC from treating it as JSX.
+  4. `MemoryRouter` wraps every render to satisfy the `<Link to="/login">` inside the component.
+  5. `vi.setConfig({ testTimeout: 15_000 })` at file scope compensates for sequential `maxWorkers: 1` environment boot time on Windows paths with spaces.
+  6. Button queried via `getByRole('button')` (no name constraint) — avoids expensive ARIA accessible-name tree traversal through Lucide SVG children; `toHaveTextContent('Create Account')` separately asserts the label. `getByText` was ruled out because the AuthCard `<h1>` shares the same "Create Account" string.
+  7. Axios error crafted with `Object.assign(new Error(...), { isAxiosError: true, response: { data: { message } } })` — satisfies `axios.isAxiosError()` without importing internal Axios constructors.
+- **Test Cases:** 6 tests — 4 initial-form, 1 successful-flow, 1 failure-handling.
+- **Status:** Complete. 133 tests passed across 12 test files, 0 failures.
+
+---
+
