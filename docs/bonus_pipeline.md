@@ -11,3 +11,17 @@ Instead of running expensive retraining pipelines daily, we use the stored feedb
    - [Upvoted Example 1]
    - [Upvoted Example 2]
    Please generate today's insight using a similar tone and analytical depth."
+  ```
+
+## 2. Long-Term: Direct Preference Optimization (DPO) & Fine-Tuning
+
+For long-term model alignment, the collected feedback data is exported into structured preference datasets to fine-tune open-source LLMs (like Mistral-7B or Llama-3):
+
+- **Dataset Formatting:** We map the feedback rows into standard preference pairs using the `contentSnippet` stored at the time of the vote:
+  - **Prompt:** User Preference State (Investor Type + Asset Selection) + Current Market Metrics.
+  - **Chosen Output** ($Y_{chosen}$): The generated insight snippet that received a confirmed UP vote.
+  - **Rejected Output** ($Y_{rejected}$): The generated insight snippet that received a DOWN vote.
+
+- **Model Training:** We utilize Direct Preference Optimization (DPO) directly on this dataset. DPO bypasses traditional Reinforcement Learning from Human Feedback (RLHF) complexities by optimizing the model's policy implicitly through binary cross-entropy loss over the preferred/non-preferred pairs.
+
+- **Benefit:** This teaches the model to inherently adopt the specific analytical tone and structural depth preferred by our users, while lowering production costs by deprecating the need for large few-shot examples in every runtime prompt wrapper.

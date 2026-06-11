@@ -8,6 +8,11 @@ export interface VotePayload {
     vote: 'UP' | 'DOWN'; 
 }
 
+export interface HistoricVote extends VotePayload {
+  id?: string;
+  userId?: string;
+}
+
 export function useDashboardSection(endpoint: string, queryKey: string) {
     return useQuery({
         queryKey: [queryKey],
@@ -30,12 +35,12 @@ export function useSubmitFeedback() {
       onMutate: async (newVote) => {
         await queryClient.cancelQueries({ queryKey: ['my-votes'] });
   
-        const previousVotes = queryClient.getQueryData(['my-votes']);
+        const previousVotes = queryClient.getQueryData<HistoricVote[]>(['my-votes']);
   
-        queryClient.setQueryData(['my-votes'], (old: any) => { //TODO: fix any
+        queryClient.setQueryData<HistoricVote[]>(['my-votes'], (old) => {
           const existingVotes = old || [];
           const filtered = existingVotes.filter(
-            (v: any) => !(v.sectionType === newVote.sectionType && v.contentId === newVote.contentId)
+            (v: HistoricVote) => !(v.sectionType === newVote.sectionType && v.contentId === newVote.contentId)
           );
           return [...filtered, newVote];
         });
@@ -58,7 +63,7 @@ export function useSubmitFeedback() {
 }
 
 export function useUserVotes() {
-    return useQuery({
+    return useQuery<HistoricVote[]>({
       queryKey: ['my-votes'],
       queryFn: async () => {
         const response = await api.get('/feedback/my-votes');
