@@ -436,3 +436,16 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+### [2026-06-11] — Frontend Component Test: CoinPricesCard
+
+- **What was implemented:** Full unit test suite for `CoinPricesCard.tsx` in `CoinPricesCard.spec.tsx` (18 tests across 6 describe blocks).
+- **Architectural Decisions:**
+  1. Mocked `../../../hooks/useDashboard` (`useDashboardSection`) and `../../VotingButtons` following the same isolation pattern as `AiInsightCard` and `MemeCard`.
+  2. Test Case 1 (Loading): asserts `"Loading content..."` from `Card`, absence of title and VotingButtons.
+  3. Test Case 2 (Error): three sub-cases — `error` object, `data: null`, and non-array `data` — all asserting fallback message `"Live prices temporarily unavailable. Displaying data fallback."`.
+  4. Test Case 3 (Empty array): asserts `"No assets selected."`, profile hint text, card title, and VotingButtons sentinel are all present.
+  5. Test Case 4 (Happy path): two-token fixture (BTC positive, ETH negative); asserts uppercase symbols, price formatting via `.toLocaleString()`, `text-success` / `text-danger` CSS classes on the change element, VotingButtons sentinel, and absence of loading/error states.
+- **Status:** Complete. 92 tests passed across 8 test files, 0 failures.
+
+---
+
