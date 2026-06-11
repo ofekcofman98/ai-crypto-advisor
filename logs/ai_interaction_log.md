@@ -390,4 +390,49 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 - **Architectural Decisions:** 1. Implemented data layer decoupling by mocking custom TanStack Query hooks (`useUserVotes` and `useSubmitFeedback`) directly via `vi.mock`.
   2. Verified active/inactive visual states by checking CSS class composition (`border-success`, `border-danger`) depending on mocked backend responses.
   3. Asserted mutation triggers using Vitest spy references (`vi.fn()`) to ensure the user interaction accurately dispatches the expected payload.
-- **Status:** In progress.
+- **Status:** 29 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: AiInsightCard
+
+- **What was implemented:** Isolated layout and state testing for `AiInsightCard.tsx` using Vitest.
+- **Architectural Decisions:**
+  1. Isolated component boundaries by mocking downstream child dependencies (`VotingButtons`) and container definitions (`Card`) if needed, focusing testing strictly on structural data mapping.
+  2. Spied on custom data hooks (`useDashboardSection`) to explicitly mock the asynchronous three-state loop (`isLoading`, `isError`, and successful data delivery).
+  3. Validated runtime contract validation by asserting that corrupt or missing `data.insight` structures trigger the core container's fallback resiliency mode.
+- **Status:** 40 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: Card Container
+
+- **What was implemented:** Comprehensive unit and conditional state testing for the generic `Card.tsx` component, totaling 14 tests.
+- **Architectural Decisions:** 1. Handled SVG DOM anomalies where `svgElement.className` outputs an `SVGAnimatedString` by migrating assertions to strict `getAttribute('class')` validation for dynamic theme color states (`text-primary`, `text-secondary`, `text-warning`).
+  2. Enforced structural isolation by ensuring that loading and error pipelines mathematically suppress the rendering of container header text and children nodes.
+- **Status:** Complete. 14 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: CardGrid Wrapper
+
+- **What was implemented:** Structural layout and grid distribution testing for `CardGrid.tsx` (4 tests).
+- **Architectural Decisions:** 1. Validated layout grid compile states by enforcing structural assertions on specific Tailwind CSS responsiveness classes (`grid`, `md:grid-cols-2`).
+  2. Verified children tree composition integrity by asserting exact DOM direct descendant constraints (`.children.length`).
+- **Status:** Complete. 4 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: MemeCard
+
+- **What was implemented:** Full unit test suite for `MemeCard.tsx` in `MemeCard.spec.tsx` (12 tests across 5 describe blocks).
+- **Architectural Decisions:**
+  1. Mocked `../../../hooks/useDashboard` (`useDashboardSection`) to isolate hook boundary and control all data/loading/error states.
+  2. Mocked `../../VotingButtons` to a sentinel `<div data-testid="mock-voting-buttons" />` to enforce component isolation.
+  3. Test Case 1 (Loading): asserts `"Loading content..."` text from `Card`, absence of title and VotingButtons.
+  4. Test Case 2 (Error / Invalid Image): covers three sub-cases — `error` object, `imageUrl` not a string, and `data: null` — all asserting the fallback message `"Could not fetch todays meme. Static backup loaded."`.
+  5. Test Case 3 (Happy Path): asserts `<img>` presence, correct `src` and `alt` attributes, VotingButtons sentinel visibility, and absence of loading/error states.
+- **Status:** Complete. 74 tests passed across 7 test files, 0 failures.
+
+---
+
