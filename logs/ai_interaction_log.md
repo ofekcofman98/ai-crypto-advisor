@@ -601,3 +601,13 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Fix: Frontend Vercel Deployment — API Base URL (2026-06-12)
+- **Scope:** `apps/frontend/src/utils/api.ts`
+- **Changes Made:**
+  - Updated `baseURL` in the Axios client from `import.meta.env.VITE_API_URL || 'http://localhost:4000/api'` to `import.meta.env.VITE_API_BASE_URL || 'https://ai-crypto-advisor-production-c0c8.up.railway.app/api'`.
+  - The env variable name is now `VITE_API_BASE_URL` (aligned with Vite convention for this project).
+  - The hardcoded production Railway URL is used as the fallback so the deployed frontend never resolves to localhost.
+- **Note:** `apps/frontend/package.json` build script was already `"vite build"` — no change required there.
+
+---
+
