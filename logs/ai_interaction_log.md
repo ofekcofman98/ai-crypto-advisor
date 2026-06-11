@@ -486,7 +486,7 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
-## Register Integration Test Suite
+## [2026-06-11] Register Integration Test Suite
 - **Date:** 2026-06-11
 - **File:** `apps/frontend/src/pages/Register.spec.tsx`
 - **Feature:** Full registration pipeline — form rendering, happy-path API call, and error-handling.
@@ -500,6 +500,26 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
   7. Axios error crafted with `Object.assign(new Error(...), { isAxiosError: true, response: { data: { message } } })` — satisfies `axios.isAxiosError()` without importing internal Axios constructors.
 - **Test Cases:** 6 tests — 4 initial-form, 1 successful-flow, 1 failure-handling.
 - **Status:** Complete. 133 tests passed across 12 test files, 0 failures.
+
+---
+
+## [2026-06-11] Entry 13 — Pages Fractal Refactor + Login Test Suite
+
+- **Date:** 2026-06-11
+- **Feature:** Structural refactor of `pages/` to Fractal Component layout + `Login.spec.tsx` integration suite
+- **Files Changed:**
+  - Created `pages/Register/Register.tsx`, `pages/Register/Register.spec.tsx`, `pages/Register/index.ts`
+  - Created `pages/Login/Login.tsx`, `pages/Login/Login.spec.tsx`, `pages/Login/index.ts`
+  - Created `pages/Dashboard/Dashboard.tsx`, `pages/Dashboard/index.ts`
+  - Created `pages/Onboarding/Onboarding.tsx`, `pages/Onboarding/index.ts`
+  - Deleted flat-file originals: `Register.tsx`, `Register.spec.tsx`, `Login.tsx`, `Dashboard.tsx`, `Onboarding.tsx`
+- **Key Decisions:**
+  1. All four pages promoted from flat files to dedicated sub-folders with `index.ts` barrel files — `App.tsx` imports (`./pages/Login`, etc.) remain unchanged since Node/TypeScript resolves directories to their `index` file automatically.
+  2. All internal relative imports within moved files updated from `../` to `../../` depth to reflect the new nesting level.
+  3. `Register.spec.tsx` mock paths updated from `../utils/api` → `../../utils/api` and `../store/authStore` → `../../store/authStore` to match the new location.
+  4. `Login.spec.tsx` built as a structural mirror of `Register.spec.tsx` applying all proven patterns: `vi.hoisted` for clean mock hoisting, `vi.mock('../../utils/api')`, selector-style `useAuthStore` mock, `MemoryRouter` wrapper, `getByRole('button')` + `toHaveTextContent` split, `vi.setConfig({ testTimeout: 15_000 })`.
+  5. Three test scenarios: initial render (email input, password input, "Sign In" button), successful login (POST `/auth/login` payload + `setAuth` call verified), failure handling (Axios 401 error surfaces "Invalid credentials" in DOM).
+- **Test Results:** 138 tests passed across 13 test files, 0 failures.
 
 ---
 

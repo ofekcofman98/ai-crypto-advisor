@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, User, Loader2, ArrowRight } from 'lucide-react';
-import api from '../utils/api';
-import { useAuthStore } from '../store/authStore';
-import { getAPIErrorMessage } from '../utils/errorHandler';
-import AuthInput from '../components/ui/AuthInput';
-import AuthCard from '../components/ui/AuthCard';
+import api from '../../utils/api';
+import { useAuthStore } from '../../store/authStore';
+import { getAPIErrorMessage } from '../../utils/errorHandler';
+import AuthInput from '../../components/ui/AuthInput';
+import AuthCard from '../../components/ui/AuthCard';
 
 export default function Register() {
   const [name, setName] = useState('');

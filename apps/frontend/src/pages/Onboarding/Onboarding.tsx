@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { Coins, UserCheck, Layout, Loader2 } from 'lucide-react';
-import api from '../utils/api';
-import { useAuthStore } from '../store/authStore';
-import SelectionGrid from '../components/ui/SelectionGrid';
-import AuthCard from '../components/ui/AuthCard';
+import api from '../../utils/api';
+import { useAuthStore } from '../../store/authStore';
+import SelectionGrid from '../../components/ui/SelectionGrid';
+import AuthCard from '../../components/ui/AuthCard';
 
 const ASSET_OPTIONS = ['BTC', 'ETH', 'SOL', 'BNB', 'ADA'];
 const INVESTOR_TYPES = [

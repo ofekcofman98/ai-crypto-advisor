@@ -19,14 +19,14 @@ const { mockSetAuth, mockApiPost } = vi.hoisted(() => ({
 
 // ─── Module Mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../utils/api', () => ({
+vi.mock('../../utils/api', () => ({
   default: { post: mockApiPost },
 }));
 
 // useAuthStore is called as a selector hook: useAuthStore((state) => state.setAuth)
 // The factory receives the selector and calls it with a minimal state stub.
 // Avoid <T> generic syntax in .tsx — OXC parses it as JSX; plain unknown return is sufficient.
-vi.mock('../store/authStore', () => ({
+vi.mock('../../store/authStore', () => ({
   useAuthStore: vi.fn(
     (selector: (s: { setAuth: typeof mockSetAuth }) => unknown) =>
       selector({ setAuth: mockSetAuth }),

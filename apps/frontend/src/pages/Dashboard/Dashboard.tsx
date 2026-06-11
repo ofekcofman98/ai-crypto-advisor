@@ -1,10 +1,10 @@
 import { LogOut, LayoutDashboard, User } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import CardGrid from '../components/dashboard/CardGrid';
-import CoinPricesCard from '../components/dashboard/CoinPricesCard';
-import MarketNewsCard from '../components/dashboard/MarketNewsCard';
-import AiInsightCard from '../components/dashboard/AiInsightCard';
-import MemeCard from '../components/dashboard/MemeCard';
+import { useAuthStore } from '../../store/authStore';
+import CardGrid from '../../components/dashboard/CardGrid';
+import CoinPricesCard from '../../components/dashboard/CoinPricesCard';
+import MarketNewsCard from '../../components/dashboard/MarketNewsCard';
+import AiInsightCard from '../../components/dashboard/AiInsightCard';
+import MemeCard from '../../components/dashboard/MemeCard';
 
 export default function Dashboard() {
     const { user, logout } = useAuthStore();
