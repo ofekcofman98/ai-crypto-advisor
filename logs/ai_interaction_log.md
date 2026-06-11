@@ -576,3 +576,16 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Fix: OpenRouter API call failing silently — ai.service.ts
+
+- **Date:** 2026-06-11
+- **File Changed:** `apps/backend/src/modules/dashboard/ai.service.ts`
+- **Root Cause:** Three compounding bugs caused every live AI insight call to fall through to the fallback. (1) The model ID `google/gemini-2.5-flash:free` is invalid — Gemini 2.5 Flash has no free tier on OpenRouter and requires a $5 minimum credit balance; the `:free` variant simply doesn't exist, producing a 404 from the API. (2) The `catch` block logged a static warning string without ever logging the actual `error` object, making the true cause invisible in the console. (3) The 7-second timeout is too short for free-tier OpenRouter models, which queue behind paid traffic and can take 10–25 seconds.
+- **Changes Made:**
+  - Changed model to `meta-llama/llama-3.3-70b-instruct:free`, a stable and capable free model on OpenRouter.
+  - Increased Axios `timeout` from `7000` to `25000` ms.
+  - Replaced the silent catch log with `axios.isAxiosError` introspection that prints the HTTP status and response body, so future failures are immediately visible.
+- **No schema/API contract changes.**
+
+---
+

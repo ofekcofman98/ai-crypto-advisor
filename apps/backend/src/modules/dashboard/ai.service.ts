@@ -1,5 +1,19 @@
 import axios from 'axios';
 
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface CacheEntry {
+  insight: string;
+  expiresAt: number;
+}
+
+const insightCache = new Map<string, CacheEntry>();
+let rateLimitCooldownUntil = 0;
+
+function getCacheKey(investorType: string, assets: string[]): string {
+  return `${investorType}:${[...assets].sort().join(',')}`;
+}
+
 function getFallbackInsight(investorType: string, assets: string[], prices: any): string {
     const assetList = assets.join(', ');
     
@@ -23,6 +37,16 @@ export async function generateCryptoInsight(
       console.warn('OPENROUTER_API_KEY missing. Using fallback AI insights.');
       return getFallbackInsight(investorType, assets, currentPrices);
     }
+
+    const cacheKey = getCacheKey(investorType, assets);
+    const cached = insightCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.insight;
+    }
+
+    if (Date.now() < rateLimitCooldownUntil) {
+      return getFallbackInsight(investorType, assets, currentPrices);
+    }
   
     try {
       const prompt = `
@@ -38,7 +62,7 @@ export async function generateCryptoInsight(
       const response = await axios.post(
         'https://openrouter.ai/api/v1/chat/completions',
         {
-          model: 'google/gemini-2.5-flash:free',
+          model: 'meta-llama/llama-3.3-70b-instruct:free',
           messages: [{ role: 'user', content: prompt }],
         },
         {
@@ -47,7 +71,7 @@ export async function generateCryptoInsight(
             'Content-Type': 'application/json',
             'HTTP-Referer': 'http://localhost:4000',
           },
-          timeout: 7000,
+          timeout: 25000,
         }
       );
   
@@ -58,10 +82,21 @@ export async function generateCryptoInsight(
         return getFallbackInsight(investorType, assets, currentPrices);
       }
 
-      return insightText.trim();
+      const result = insightText.trim();
+      insightCache.set(cacheKey, { insight: result, expiresAt: Date.now() + CACHE_TTL_MS });
+      return result;
     } 
     catch (error) {
-      console.warn('OpenRouter API failed, serving backup AI insight.');
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        const retryAfter: number = error.response.data?.error?.metadata?.retry_after_seconds ?? 60;
+        rateLimitCooldownUntil = Date.now() + (retryAfter + 5) * 1000;
+        console.warn(`OpenRouter rate-limited. Cooling down for ${retryAfter + 5}s.`);
+      } else {
+        const message = axios.isAxiosError(error)
+          ? `${error.response?.status} — ${JSON.stringify(error.response?.data)}`
+          : String(error);
+        console.warn(`OpenRouter API failed (${message}), serving backup AI insight.`);
+      }
       return getFallbackInsight(investorType, assets, currentPrices);
     }
 }
