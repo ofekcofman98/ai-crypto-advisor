@@ -273,3 +273,319 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ### Human-AI Collaboration Notes
 - Capitalized on active design intuition and structural checking (`npm run build`) to safely rollback rigid layout rules, upgrading them into responsive and adaptable design elements.
+
+---
+
+## [2026-06-11] fix(testing): resolve Jest global types and prisma mock imports
+
+### Changes Made
+- **`apps/backend/src/shared/database/__mocks__/prismaClient.ts`**: Removed two incorrect import statements — `import { beforeEach } from 'node:test'` and `import { jest } from 'jest'`. Jest's `jest`, `beforeEach`, `describe`, `it`, and `expect` are injected as globals by the Jest runtime; they must never be explicitly imported.
+- **`apps/backend/tsconfig.json`**: Added `"types": ["jest", "node"]` to `compilerOptions` so TypeScript explicitly pulls in `@types/jest` and `@types/node` globals. Extended `typeRoots` to include `../../node_modules/@types` to correctly resolve hoisted monorepo packages.
+- Ran `npm install` from monorepo root to ensure all packages (including `@types/jest`, `@types/node`, `jest-mock-extended`, `ts-jest`, `supertest`) were present.
+
+### Verification
+- `tsc --noEmit` in `apps/backend` exits with zero errors.
+
+---
+
+## [2026-06-11] feat(testing): add auth integration test suite
+
+### Changes Made
+- **`apps/backend/src/modules/auth/auth.spec.ts`** (new): 3 integration tests covering the two auth endpoints:
+  - `POST /api/auth/register` — Happy path: `prismaMock.user.findUnique` returns `null` (no duplicate), `prismaMock.user.create` returns the new user; asserts 201 status, `accessToken` in body, and correct `user` shape.
+  - `POST /api/auth/register` — Validation path: malformed payload (missing name/password, invalid email) triggers Zod; asserts 400 + `'Validation failed.'` message.
+  - `POST /api/auth/login` — Happy path: `prismaMock.user.findUnique` returns user with a real bcrypt hash; asserts 200, `accessToken`, and correct email in response.
+
+### Verification
+- Tests run successfully as part of the full suite (`npm run test` → 10 tests, 0 failures).
+
+---
+
+## [2026-06-11] feat(testing): add onboarding integration test suite
+
+### Changes Made
+- **`apps/backend/src/modules/Onboarding/onboarding.spec.ts`** (new): 7 integration tests covering `POST /api/onboarding` — happy path with `prismaMock.preference.update`, two 401 paths (missing/invalid JWT), and four 400 Zod-validation paths (empty body, empty array, invalid `InvestorType` enum, invalid `ContentType` enum).
+- **`apps/backend/src/modules/auth/auth.spec.ts`**: Added `jest.mock('../../shared/database/prismaClient')` and switched to deriving `prismaMock` from the mocked module import (`prisma as DeepMockProxy<PrismaClient>`) instead of a direct `__mocks__/` path import.
+- **`apps/backend/jest.config.ts`**: Added `transform` with `isolatedModules: true` to suppress ts-jest TS151002 warning for Node16 module kind.
+- **Root cause discovered**: Importing `prismaMock` directly from `__mocks__/prismaClient.ts` creates a separate Jest module-registry instance from the one services receive through `jest.mock`. The fix is to import `prisma` from the mocked module path itself (same registry entry) and cast to `DeepMockProxy<PrismaClient>`.
+
+### Verification
+- `npm run test` → **2 suites, 10 tests, 0 failures**.
+
+---
+
+## [2026-06-11] feat(testing): add dashboard integration test suite
+
+### Changes Made
+- **`apps/backend/src/modules/dashboard/dashboard.spec.ts`** (new): 9 integration tests across 4 routes. Each route has a Happy Path (service mock returns live data) and a Resiliency Path (service mock throws, router falls back to static JSON with 200 OK). Additional authentication guard test loops all 4 routes to verify 401 on missing token.
+- **`apps/backend/jest.config.ts`**: Removed deprecated `isolatedModules` from `ts-jest` transform options (now belongs in tsconfig per ts-jest v30 migration).
+- **`apps/backend/tsconfig.json`**: Added `"isolatedModules": true` per ts-jest v30 recommendation.
+
+### Verification
+- `npm run test --testPathPatterns=dashboard.spec` → **1 suite, 9 tests, 0 failures**, zero warnings.
+
+---
+
+## [2026-06-11] feat(testing): add feedback integration test suite
+
+### Changes Made
+- **`apps/backend/src/modules/feedback/feedback.spec.ts`** (new): 9 integration tests across both feedback endpoints.
+  - `POST /api/feedback`: 2 happy paths (UP vote creates record; DOWN vote overwrites via upsert), 2 guard paths (missing/invalid JWT → 401), 3 Zod validation paths (invalid `VoteType`, missing `sectionType`, empty `contentId` → 400).
+  - `GET /api/feedback/my-votes`: happy path (returns ordered vote list, asserts `findMany` called with correct `userId`), resiliency path (`findMany` throws → service catches and returns `[]` with 200).
+
+### Verification
+- `npm run test --testPathPatterns=feedback.spec` → **1 suite, 9 tests, 0 failures**.
+
+### [2026-06-11] — Backend Test Pipeline Validation Complete
+
+---
+
+- **What was implemented:** Comprehensive integration test suites for all core backend modules (`auth`, `onboarding`, `dashboard`, `feedback`) totaling 28 deterministic tests with 100% success rate.
+- **Architectural Decisions:**
+  1. **Dual-Layered Mocking Strategy:** Isolated DB layers via typed `prismaMock` (`jest-mock-extended`) and external services (CoinGecko, CryptoPanic, OpenRouter) via Jest automated service mocks to eliminate operational flakiness.
+  2. **Resiliency Validation:** Hardened code quality by explicitly testing failure boundaries. Verified that downstream API/DB timeouts trigger local static JSON or fallback array injection under a safe `200 OK` network contract.
+  3. **Data Integrity:** Tested multi-path Zod validation boundaries for complex schemas, guaranteeing that corrupted client-side objects, empty arrays, or prohibited Enum values are stopped at the gateway with clear `400 Bad Request` messages.
+- **Status:** 4 suites, 28 tests, 0 failures. Backend ready for deployment staging.
+
+---
+
+### [2026-06-11] — Frontend Fractal / Component-Driven Architecture Refactor
+
+---
+
+- **What was implemented:** Migrated all 11 frontend components from flat `.tsx` files into self-contained fractal folders (`ComponentName/ComponentName.tsx` + `index.ts` barrel). Created a `SelectionGrid.spec.tsx` test suite covering string options, object options, selection state, and `accentColor` styling. Also bootstrapped the Vitest test setup file (`src/test/setup.ts`).
+- **Architectural Decisions:**
+  1. **Barrel `index.ts` files:** Every component folder exposes a single `index.ts` so all existing page-level import paths (`../components/ui/AuthInput`, etc.) resolve automatically through TypeScript/Vite directory resolution — zero import-path churn in consumer files.
+  2. **Depth-corrected inter-component imports:** Dashboard card components (`AiInsightCard`, `CoinPricesCard`, `MarketNewsCard`, `MemeCard`) were moved one level deeper; their `useDashboard`, `VotingButtons`, and `Card` imports were updated from `../../` to `../../../` / `../../` accordingly.
+  3. **Named re-exports for `RouteGuards`:** Because `RouteGuards` exports four named guards (not a default), its `index.ts` uses `export { ... } from './RouteGuards'` rather than `export { default }`, keeping the `App.tsx` destructured import intact.
+- **Status:** `tsc --noEmit` exits 0. All 11 components migrated, originals deleted, TS server clean and green.
+
+---
+
+### [2026-06-11] — Frontend Component Test: SelectionGrid
+
+- **What was implemented:** Unit and structural tests for the polymorphic `SelectionGrid.tsx` component using Vitest and React Testing Library.
+- **Architectural Decisions:** 1. Tested code paths for both input contracts (simple `string[]` arrays and detailed `{ id, name, desc }` object configurations) to preserve structural polymorphism.
+  2. Leveraged native string matching and DOM sub-tree traversal (`querySelector('svg')`) to implicitly verify conditional rendering of UI indicators (Lucide icons).
+  3. Asserted strict CSS class injection to validate real-time dynamic theme compilation (`accentColor`) against Tailwind v4 configurations.
+- **Status:** 9 tests passed, 0 failures.
+
+---
+
+
+### [2026-06-11] — Frontend Integration Test: Route Guards & Authentication Routing
+
+- **What was implemented:** Behavioral integration tests for the security matrix in `RouteGuards.tsx` (`ProtectedRoute`, `OnboardingGuard`, `DashboardGuard`, and `PublicRoute`).
+- **Architectural Decisions:**
+  1. Driven in-memory store variations explicitly via `useAuthStore.setState()`, maintaining native TypeScript type-safety while completely avoiding fragile module-level overrides.
+  2. Integrated `localStorage.clear()` globally across test hooks to suppress automatic `persist` hydration leaks.
+  3. Built an isolated execution pipeline utilizing React Router's `<MemoryRouter>` with embedded semantic target strings to mathematically verify redirect operations.
+- **Status:** 11 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: VotingButtons
+
+- **What was implemented:** Behavioral unit testing for the `VotingButtons.tsx` feedback micro-interaction component using Vitest.
+- **Architectural Decisions:** 1. Implemented data layer decoupling by mocking custom TanStack Query hooks (`useUserVotes` and `useSubmitFeedback`) directly via `vi.mock`.
+  2. Verified active/inactive visual states by checking CSS class composition (`border-success`, `border-danger`) depending on mocked backend responses.
+  3. Asserted mutation triggers using Vitest spy references (`vi.fn()`) to ensure the user interaction accurately dispatches the expected payload.
+- **Status:** 29 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: AiInsightCard
+
+- **What was implemented:** Isolated layout and state testing for `AiInsightCard.tsx` using Vitest.
+- **Architectural Decisions:**
+  1. Isolated component boundaries by mocking downstream child dependencies (`VotingButtons`) and container definitions (`Card`) if needed, focusing testing strictly on structural data mapping.
+  2. Spied on custom data hooks (`useDashboardSection`) to explicitly mock the asynchronous three-state loop (`isLoading`, `isError`, and successful data delivery).
+  3. Validated runtime contract validation by asserting that corrupt or missing `data.insight` structures trigger the core container's fallback resiliency mode.
+- **Status:** 40 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: Card Container
+
+- **What was implemented:** Comprehensive unit and conditional state testing for the generic `Card.tsx` component, totaling 14 tests.
+- **Architectural Decisions:** 1. Handled SVG DOM anomalies where `svgElement.className` outputs an `SVGAnimatedString` by migrating assertions to strict `getAttribute('class')` validation for dynamic theme color states (`text-primary`, `text-secondary`, `text-warning`).
+  2. Enforced structural isolation by ensuring that loading and error pipelines mathematically suppress the rendering of container header text and children nodes.
+- **Status:** Complete. 14 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: CardGrid Wrapper
+
+- **What was implemented:** Structural layout and grid distribution testing for `CardGrid.tsx` (4 tests).
+- **Architectural Decisions:** 1. Validated layout grid compile states by enforcing structural assertions on specific Tailwind CSS responsiveness classes (`grid`, `md:grid-cols-2`).
+  2. Verified children tree composition integrity by asserting exact DOM direct descendant constraints (`.children.length`).
+- **Status:** Complete. 4 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: MemeCard
+
+- **What was implemented:** Full unit test suite for `MemeCard.tsx` in `MemeCard.spec.tsx` (12 tests across 5 describe blocks).
+- **Architectural Decisions:**
+  1. Mocked `../../../hooks/useDashboard` (`useDashboardSection`) to isolate hook boundary and control all data/loading/error states.
+  2. Mocked `../../VotingButtons` to a sentinel `<div data-testid="mock-voting-buttons" />` to enforce component isolation.
+  3. Test Case 1 (Loading): asserts `"Loading content..."` text from `Card`, absence of title and VotingButtons.
+  4. Test Case 2 (Error / Invalid Image): covers three sub-cases — `error` object, `imageUrl` not a string, and `data: null` — all asserting the fallback message `"Could not fetch todays meme. Static backup loaded."`.
+  5. Test Case 3 (Happy Path): asserts `<img>` presence, correct `src` and `alt` attributes, VotingButtons sentinel visibility, and absence of loading/error states.
+- **Status:** Complete. 74 tests passed across 7 test files, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: CoinPricesCard
+
+- **What was implemented:** Full unit test suite for `CoinPricesCard.tsx` in `CoinPricesCard.spec.tsx` (18 tests across 6 describe blocks).
+- **Architectural Decisions:**
+  1. Mocked `../../../hooks/useDashboard` (`useDashboardSection`) and `../../VotingButtons` following the same isolation pattern as `AiInsightCard` and `MemeCard`.
+  2. Test Case 1 (Loading): asserts `"Loading content..."` from `Card`, absence of title and VotingButtons.
+  3. Test Case 2 (Error): three sub-cases — `error` object, `data: null`, and non-array `data` — all asserting fallback message `"Live prices temporarily unavailable. Displaying data fallback."`.
+  4. Test Case 3 (Empty array): asserts `"No assets selected."`, profile hint text, card title, and VotingButtons sentinel are all present.
+  5. Test Case 4 (Happy path): two-token fixture (BTC positive, ETH negative); asserts uppercase symbols, price formatting via `.toLocaleString()`, `text-success` / `text-danger` CSS classes on the change element, VotingButtons sentinel, and absence of loading/error states.
+- **Status:** Complete. 92 tests passed across 8 test files, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: MarketNewsCard
+
+- **What was implemented:** Full unit test suite for `MarketNewsCard.tsx` in `MarketNewsCard.spec.tsx` (16 tests across 6 describe blocks).
+- **Architectural Decisions:**
+  1. Mocked `../../../hooks/useDashboard` and `../../VotingButtons` following the established isolation pattern.
+  2. Test Case 1 (Loading): asserts `"Loading content..."` from `Card`, absence of title and VotingButtons.
+  3. Test Case 2 (Error): three sub-cases — `error` object, `data: null`, non-array `data` — all asserting fallback message `"Market news currently unavailable. Displaying static fallback feed."`.
+  4. Test Case 3 (Happy path): single-item fixture; asserts headline text, `<a>` `href`, `target="_blank"`, `rel="noopener noreferrer"` (security), source title, sentiment badge, VotingButtons sentinel, and absence of loading/error states.
+  5. Anchor security attributes (`target` + `rel`) tested explicitly via `getByRole('link')` to mirror real browser security constraints.
+- **Status:** Complete. 108 tests passed across 9 test files, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: AuthCard
+
+- **What was implemented:** Full unit test suite for `AuthCard.tsx` in `AuthCard.spec.tsx` (10 tests across 3 describe blocks).
+- **Architectural Decisions:**
+  1. No hook or child mocks required — `AuthCard` is a pure presentational component with no external dependencies.
+  2. Test Case 1 (Basic Rendering): asserts title via `getByRole('heading')`, subtitle via `getByText`, and absence of any `.text-danger` element when `error={null}`.
+  3. Test Case 2 (Error State): asserts error text presence, `text-danger` class, and `bg-danger/10` class directly on the error container element.
+  4. Test Case 3 (Children Composition): asserts child form renders and is nested inside `.bg-surface` container via `toContainElement`; asserts custom `maxWidthClassName="max-w-lg"` compiles into the surface container's class list; asserts `max-w-md` default when prop is omitted.
+- **Status:** Complete. 118 tests passed across 10 test files, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: AuthInput
+
+- **What was implemented:** Full unit test suite for `AuthInput.tsx` in `AuthInput.spec.tsx` (9 tests across 3 describe blocks). Installed `@testing-library/user-event` as a new dev dependency to support realistic DOM interaction simulation.
+- **Architectural Decisions:**
+  1. No hook or child mocks required — `AuthInput` is a pure presentational component with `InputHTMLAttributes` spread directly onto the native `<input>`.
+  2. Test Case 1 (Basic Rendering): label text via `getByText`; icon sentinel via `getByTestId` with parent `absolute` class assertion; `<input>` via `getByRole('textbox')`.
+  3. Test Case 2 (Attribute Spreading): queries via `getByPlaceholderText` (required for `type="email"` which does not have ARIA role `textbox`); asserts forwarded `type`, `placeholder`, and `disabled` attributes using `toHaveAttribute` and `toBeDisabled`.
+  4. Test Case 3 (User Interaction): `userEvent.type` simulates realistic keystrokes; asserts final `.value` via `toHaveValue('crypto')`; asserts `onChange` fires once per character (6 calls for `"crypto"`); asserts `onChange` is never called when `disabled={true}`.
+- **Status:** Complete. 127 tests passed across 11 test files, 0 failures.
+
+---
+
+## [2026-06-11] Register Integration Test Suite
+- **Date:** 2026-06-11
+- **File:** `apps/frontend/src/pages/Register.spec.tsx`
+- **Feature:** Full registration pipeline — form rendering, happy-path API call, and error-handling.
+- **Architectural Decisions:**
+  1. `vi.hoisted` used to define `mockSetAuth` and `mockApiPost` before module evaluation so they are available inside both `vi.mock` factory closures.
+  2. `../utils/api` mocked as a plain object `{ default: { post: mockApiPost } }` — no real Axios instance is constructed during tests.
+  3. `../store/authStore` mocked as a selector-passthrough (`useAuthStore: vi.fn((selector) => selector({ setAuth: mockSetAuth }))`). Generic `<T>` syntax avoided in `.tsx` to prevent OXC from treating it as JSX.
+  4. `MemoryRouter` wraps every render to satisfy the `<Link to="/login">` inside the component.
+  5. `vi.setConfig({ testTimeout: 15_000 })` at file scope compensates for sequential `maxWorkers: 1` environment boot time on Windows paths with spaces.
+  6. Button queried via `getByRole('button')` (no name constraint) — avoids expensive ARIA accessible-name tree traversal through Lucide SVG children; `toHaveTextContent('Create Account')` separately asserts the label. `getByText` was ruled out because the AuthCard `<h1>` shares the same "Create Account" string.
+  7. Axios error crafted with `Object.assign(new Error(...), { isAxiosError: true, response: { data: { message } } })` — satisfies `axios.isAxiosError()` without importing internal Axios constructors.
+- **Test Cases:** 6 tests — 4 initial-form, 1 successful-flow, 1 failure-handling.
+- **Status:** Complete. 133 tests passed across 12 test files, 0 failures.
+
+---
+
+## [2026-06-11] — Pages Fractal Refactor + Login Test Suite
+
+- **Date:** 2026-06-11
+- **Feature:** Structural refactor of `pages/` to Fractal Component layout + `Login.spec.tsx` integration suite
+- **Files Changed:**
+  - Created `pages/Register/Register.tsx`, `pages/Register/Register.spec.tsx`, `pages/Register/index.ts`
+  - Created `pages/Login/Login.tsx`, `pages/Login/Login.spec.tsx`, `pages/Login/index.ts`
+  - Created `pages/Dashboard/Dashboard.tsx`, `pages/Dashboard/index.ts`
+  - Created `pages/Onboarding/Onboarding.tsx`, `pages/Onboarding/index.ts`
+  - Deleted flat-file originals: `Register.tsx`, `Register.spec.tsx`, `Login.tsx`, `Dashboard.tsx`, `Onboarding.tsx`
+- **Key Decisions:**
+  1. All four pages promoted from flat files to dedicated sub-folders with `index.ts` barrel files — `App.tsx` imports (`./pages/Login`, etc.) remain unchanged since Node/TypeScript resolves directories to their `index` file automatically.
+  2. All internal relative imports within moved files updated from `../` to `../../` depth to reflect the new nesting level.
+  3. `Register.spec.tsx` mock paths updated from `../utils/api` → `../../utils/api` and `../store/authStore` → `../../store/authStore` to match the new location.
+  4. `Login.spec.tsx` built as a structural mirror of `Register.spec.tsx` applying all proven patterns: `vi.hoisted` for clean mock hoisting, `vi.mock('../../utils/api')`, selector-style `useAuthStore` mock, `MemoryRouter` wrapper, `getByRole('button')` + `toHaveTextContent` split, `vi.setConfig({ testTimeout: 15_000 })`.
+  5. Three test scenarios: initial render (email input, password input, "Sign In" button), successful login (POST `/auth/login` payload + `setAuth` call verified), failure handling (Axios 401 error surfaces "Invalid credentials" in DOM).
+- **Test Results:** 138 tests passed across 13 test files, 0 failures.
+
+---
+
+## [2026-06-11] — Onboarding Integration Test Suite
+
+- **Date:** 2026-06-11
+- **Feature:** `Onboarding.spec.tsx` — full integration coverage for the onboarding page
+- **Files Changed:**
+  - Created `pages/Onboarding/Onboarding.spec.tsx`
+- **Key Decisions:**
+  1. `vi.hoisted` builds `mockUpdateOnboardingStatus` and `mockApiPost` before any module evaluation, making them available inside `vi.mock` factory closures without hoisting issues.
+  2. `useAuthStore` mocked as a selector-passthrough: factory receives the selector function and calls it with `{ updateOnboardingStatus: mockUpdateOnboardingStatus }` — mirrors the Login/Register pattern exactly.
+  3. Submit button queried via `getByRole('button', { name: /generate my custom dashboard/i })` — the regex is case-insensitive and avoids brittle exact-string coupling; also avoids expensive SVG ARIA traversal since the button text is a plain string (no icon sibling when not loading).
+  4. Test Case 2 proves the toggle-deselect filter by clicking BTC→ETH→BTC and then submitting; the inspected payload `{ cryptoAssets: ['ETH'] }` is the ground-truth evidence that the array filter ran correctly.
+  5. `axios` itself is not mocked — `api.post` is the only call surface touched by the component, so a direct `vi.mock('../../utils/api')` is sufficient and avoids the internal Axios module graph.
+- **Test Cases:** 3 tests — 1 validation lock, 1 toggle deselection, 1 happy path.
+- **Test Results:** 141 tests passed across 14 test files, 0 failures.
+
+---
+
+## [2026-06-11] — Dashboard Integration Test Suite
+
+- **Date:** 2026-06-11
+- **Feature:** `Dashboard.spec.tsx` — full integration coverage for the dashboard page
+- **Files Changed:**
+  - Created `pages/Dashboard/Dashboard.spec.tsx`
+- **Key Decisions:**
+  1. `Dashboard` calls `useAuthStore()` **without a selector** (destructures `{ user, logout }` directly), so the mock returns the state object directly rather than invoking a selector function — a distinct pattern from Login/Register/Onboarding which use selector-style hooks.
+  2. `vi.hoisted` declares `mockLogout` before module evaluation so it is safely captured inside the `vi.mock` factory closure.
+  3. `CardGrid` mocked as a transparent `children` pass-through so the four card stubs still render inside it without needing the real layout implementation.
+  4. All four smart child cards (`CoinPricesCard`, `MarketNewsCard`, `AiInsightCard`, `MemeCard`) replaced with `data-testid` stub elements — eliminates every downstream API hook, TanStack Query provider requirement, and Lucide SVG traversal.
+  5. Logout button located via `getByTitle('Sign Out')` — the most precise DOM anchor since the `title` attribute is the semantic source of truth; more stable than relying on the CSS-hidden "Logout" span text whose visibility depends on viewport media queries not evaluated by jsdom.
+- **Test Cases:** 4 tests — 2 session-binding, 1 sub-component mounting, 1 session exit.
+- **Test Results:** 145 tests passed across 15 test files, 0 failures.
+
+---
+
+## Entry 16 — Dashboard Header Extraction, Onboarding Constants, Confirm Guard
+
+- **Date:** 2026-06-11
+- **Feature:** Production-grade refactor: DashboardHeader component, onboarding constants module, window.confirm logout guard
+- **Files Changed:**
+  - Created `pages/Dashboard/components/DashboardHeader.tsx`
+  - Updated `pages/Dashboard/Dashboard.tsx` (uses DashboardHeader, cleaned up header markup)
+  - Created `pages/Onboarding/onboarding.constants.ts` (typed exports for ASSET_OPTIONS, INVESTOR_TYPES, CONTENT_OPTIONS)
+  - Updated `pages/Onboarding/Onboarding.tsx` (imports constants, minor formatting cleanup)
+  - Updated `pages/Dashboard/Dashboard.spec.tsx` (window.confirm spy + cancel-path test + vi.restoreAllMocks)
+- **Key Decisions:**
+  1. `DashboardHeader` receives `userName: string | undefined` and `onLogout: () => void` as props — the confirm guard lives inside the component so `Dashboard` stays clean and the boundary is testable in isolation if needed.
+  2. `window.confirm` is called inside `DashboardHeader.handleLogout`; `onLogout` is only invoked when the user confirms, making the prop a pure action with no dialog side-effects.
+  3. `onboarding.constants.ts` exports typed interfaces (`InvestorType`, `ContentOption`) alongside the `as const` asset array — gives downstream consumers full TypeScript narrowing.
+  4. Dashboard spec: added a second exit-flow test ("cancels dialog → logout NOT called") to cover the false branch of the confirm guard. `vi.restoreAllMocks()` added to `beforeEach` to fully reset `window.confirm` spies between tests — without it, vitest reuses the same spy object across tests and accumulated call counts cause false failures.
+- **Test Results:** 146 tests passed across 15 test files, 0 failures.
+
+---
+
+## Fix: OpenRouter API call failing silently — ai.service.ts
+
+- **Date:** 2026-06-11
+- **File Changed:** `apps/backend/src/modules/dashboard/ai.service.ts`
+- **Root Cause:** Three compounding bugs caused every live AI insight call to fall through to the fallback. (1) The model ID `google/gemini-2.5-flash:free` is invalid — Gemini 2.5 Flash has no free tier on OpenRouter and requires a $5 minimum credit balance; the `:free` variant simply doesn't exist, producing a 404 from the API. (2) The `catch` block logged a static warning string without ever logging the actual `error` object, making the true cause invisible in the console. (3) The 7-second timeout is too short for free-tier OpenRouter models, which queue behind paid traffic and can take 10–25 seconds.
+- **Changes Made:**
+  - Changed model to `meta-llama/llama-3.3-70b-instruct:free`, a stable and capable free model on OpenRouter.
+  - Increased Axios `timeout` from `7000` to `25000` ms.
+  - Replaced the silent catch log with `axios.isAxiosError` introspection that prints the HTTP status and response body, so future failures are immediately visible.
+- **No schema/API contract changes.**
+
+---
+

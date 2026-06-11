@@ -8,24 +8,17 @@ import {
   AiInsightResponse,
   CryptoPanicRawPost,
 } from './dashboard.types';
+import { COINGECKO_IDS, COIN_NAMES } from './dashboard.constants';
 
-const COINGECKO_IDS: Record<string, string> = {
-  BTC:  'bitcoin',
-  ETH:  'ethereum',
-  SOL:  'solana',
-  XRP:  'ripple',
-  ADA:  'cardano',
-  DOGE: 'dogecoin',
-};
+const coinGeckoClient = axios.create({
+  baseURL: 'https://api.coingecko.com/api/v3',
+  timeout: 5000,
+});
 
-const COIN_NAMES: Record<string, string> = {
-  BTC:  'Bitcoin',
-  ETH:  'Ethereum',
-  SOL:  'Solana',
-  XRP:  'Ripple',
-  ADA:  'Cardano',
-  DOGE: 'Dogecoin',
-};
+const cryptoPanicClient = axios.create({
+  baseURL: 'https://cryptopanic.com/api/v1',
+  timeout: 5000,
+});
 
 export async function getCryptoPrices(assets: string[]): Promise<CoinPriceToken[]> {
   if (!assets || assets.length === 0) return MOCK_COIN_PRICES;
@@ -34,7 +27,7 @@ export async function getCryptoPrices(assets: string[]): Promise<CoinPriceToken[
   if (!selectedIds) return MOCK_COIN_PRICES;
 
   try {
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
+    const response = await coinGeckoClient.get('/simple/price', {
       params: {
         ids: selectedIds,
         vs_currencies: 'usd',
@@ -56,6 +49,7 @@ export async function getCryptoPrices(assets: string[]): Promise<CoinPriceToken[
           symbol,
           currentPrice:  live?.usd          ?? mock?.price    ?? 0,
           priceChange24h: live?.usd_24h_change ?? mock?.change24h ?? 0,
+          isFallback: false,
         };
       });
   } catch {
@@ -70,6 +64,7 @@ export async function getCryptoPrices(assets: string[]): Promise<CoinPriceToken[
           symbol,
           currentPrice:  mock.price,
           priceChange24h: mock.change24h,
+          isFallback: true,
         };
       });
   }
@@ -81,7 +76,7 @@ export async function getCryptoNews(): Promise<CryptoNewsItem[]> {
   if (!apiKey) return MOCK_NEWS;
 
   try {
-    const response = await axios.get('https://cryptopanic.com/api/v1/posts/', {
+    const response = await cryptoPanicClient.get('/posts/', {
       params: { auth_token: apiKey, filter: 'hot', kind: 'news', public: 'true' },
       timeout: 5000,
     });
