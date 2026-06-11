@@ -462,3 +462,15 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+### [2026-06-11] — Frontend Component Test: AuthCard
+
+- **What was implemented:** Full unit test suite for `AuthCard.tsx` in `AuthCard.spec.tsx` (10 tests across 3 describe blocks).
+- **Architectural Decisions:**
+  1. No hook or child mocks required — `AuthCard` is a pure presentational component with no external dependencies.
+  2. Test Case 1 (Basic Rendering): asserts title via `getByRole('heading')`, subtitle via `getByText`, and absence of any `.text-danger` element when `error={null}`.
+  3. Test Case 2 (Error State): asserts error text presence, `text-danger` class, and `bg-danger/10` class directly on the error container element.
+  4. Test Case 3 (Children Composition): asserts child form renders and is nested inside `.bg-surface` container via `toContainElement`; asserts custom `maxWidthClassName="max-w-lg"` compiles into the surface container's class list; asserts `max-w-md` default when prop is omitted.
+- **Status:** Complete. 118 tests passed across 10 test files, 0 failures.
+
+---
+
