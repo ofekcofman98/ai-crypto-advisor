@@ -7,7 +7,7 @@ interface Option {
 }
 
 interface SelectionGridProps {
-    options: Option[] | string[];
+    options: readonly Option[] | readonly string[];
     selectedValues: string[] | string;
     onSelect: (id: string) => void;
     columnsClassName?: string;

@@ -557,3 +557,22 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Entry 16 — Dashboard Header Extraction, Onboarding Constants, Confirm Guard
+
+- **Date:** 2026-06-11
+- **Feature:** Production-grade refactor: DashboardHeader component, onboarding constants module, window.confirm logout guard
+- **Files Changed:**
+  - Created `pages/Dashboard/components/DashboardHeader.tsx`
+  - Updated `pages/Dashboard/Dashboard.tsx` (uses DashboardHeader, cleaned up header markup)
+  - Created `pages/Onboarding/onboarding.constants.ts` (typed exports for ASSET_OPTIONS, INVESTOR_TYPES, CONTENT_OPTIONS)
+  - Updated `pages/Onboarding/Onboarding.tsx` (imports constants, minor formatting cleanup)
+  - Updated `pages/Dashboard/Dashboard.spec.tsx` (window.confirm spy + cancel-path test + vi.restoreAllMocks)
+- **Key Decisions:**
+  1. `DashboardHeader` receives `userName: string | undefined` and `onLogout: () => void` as props — the confirm guard lives inside the component so `Dashboard` stays clean and the boundary is testable in isolation if needed.
+  2. `window.confirm` is called inside `DashboardHeader.handleLogout`; `onLogout` is only invoked when the user confirms, making the prop a pure action with no dialog side-effects.
+  3. `onboarding.constants.ts` exports typed interfaces (`InvestorType`, `ContentOption`) alongside the `as const` asset array — gives downstream consumers full TypeScript narrowing.
+  4. Dashboard spec: added a second exit-flow test ("cancels dialog → logout NOT called") to cover the false branch of the confirm guard. `vi.restoreAllMocks()` added to `beforeEach` to fully reset `window.confirm` spies between tests — without it, vitest reuses the same spy object across tests and accumulated call counts cause false failures.
+- **Test Results:** 146 tests passed across 15 test files, 0 failures.
+
+---
+

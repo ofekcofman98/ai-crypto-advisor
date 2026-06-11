@@ -57,6 +57,9 @@ function renderDashboard() {
 
 beforeEach(() => {
   mockLogout.mockClear();
+  // Restore any window.confirm (or other) spies created in the previous test so
+  // they don't accumulate call counts across tests.
+  vi.restoreAllMocks();
 });
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -92,16 +95,30 @@ describe('Dashboard', () => {
   // ── Test Case 3: Session Exit Flow ───────────────────────────────────────────
 
   describe('Test Case 3 — Session exit flow', () => {
-    it('calls logout exactly once when the logout button is clicked', async () => {
+    it('calls logout exactly once when the user confirms the sign-out dialog', async () => {
       renderDashboard();
       const user = userEvent.setup();
 
-      // The button has title="Sign Out" and visible text "Logout" (jsdom renders
-      // the span regardless of the hidden sm:inline Tailwind class). Either
-      // selector works; title is the more precise DOM anchor here.
+      // DashboardHeader now gates logout behind window.confirm. Spy on it so
+      // jsdom does not throw (no real dialog) and simulate the user confirming.
+      vi.spyOn(window, 'confirm').mockImplementation(() => true);
+
       await user.click(screen.getByTitle('Sign Out'));
 
+      expect(window.confirm).toHaveBeenCalledOnce();
       expect(mockLogout).toHaveBeenCalledOnce();
+    });
+
+    it('does NOT call logout when the user cancels the sign-out dialog', async () => {
+      renderDashboard();
+      const user = userEvent.setup();
+
+      vi.spyOn(window, 'confirm').mockImplementation(() => false);
+
+      await user.click(screen.getByTitle('Sign Out'));
+
+      expect(window.confirm).toHaveBeenCalledOnce();
+      expect(mockLogout).not.toHaveBeenCalled();
     });
   });
 });

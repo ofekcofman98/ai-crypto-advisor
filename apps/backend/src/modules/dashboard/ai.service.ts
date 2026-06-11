@@ -38,7 +38,7 @@ export async function generateCryptoInsight(
       const response = await axios.post(
         'https://openrouter.ai/api/v1/chat/completions',
         {
-          model: 'google/gemini-2.5-flash',
+          model: 'google/gemini-2.5-flash:free',
           messages: [{ role: 'user', content: prompt }],
         },
         {
@@ -51,8 +51,16 @@ export async function generateCryptoInsight(
         }
       );
   
-      return response.data.choices?.[0]?.message?.content?.trim() || getFallbackInsight(investorType, assets, currentPrices);
-    } catch (error) {
+      const insightText = response?.data?.choices?.[0]?.message?.content;
+
+      if (!insightText) {
+        console.warn('OpenRouter returned an empty response — serving fallback.');
+        return getFallbackInsight(investorType, assets, currentPrices);
+      }
+
+      return insightText.trim();
+    } 
+    catch (error) {
       console.warn('OpenRouter API failed, serving backup AI insight.');
       return getFallbackInsight(investorType, assets, currentPrices);
     }
