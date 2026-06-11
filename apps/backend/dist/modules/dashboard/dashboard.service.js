@@ -10,30 +10,23 @@ exports.getDailyMemeFallback = getDailyMemeFallback;
 const axios_1 = __importDefault(require("axios"));
 const ai_service_1 = require("./ai.service");
 const dashboard_mock_1 = require("./dashboard.mock");
-const COINGECKO_IDS = {
-    BTC: 'bitcoin',
-    ETH: 'ethereum',
-    SOL: 'solana',
-    XRP: 'ripple',
-    ADA: 'cardano',
-    DOGE: 'dogecoin',
-};
-const COIN_NAMES = {
-    BTC: 'Bitcoin',
-    ETH: 'Ethereum',
-    SOL: 'Solana',
-    XRP: 'Ripple',
-    ADA: 'Cardano',
-    DOGE: 'Dogecoin',
-};
+const dashboard_constants_1 = require("./dashboard.constants");
+const coinGeckoClient = axios_1.default.create({
+    baseURL: 'https://api.coingecko.com/api/v3',
+    timeout: 5000,
+});
+const cryptoPanicClient = axios_1.default.create({
+    baseURL: 'https://cryptopanic.com/api/v1',
+    timeout: 5000,
+});
 async function getCryptoPrices(assets) {
     if (!assets || assets.length === 0)
         return dashboard_mock_1.MOCK_COIN_PRICES;
-    const selectedIds = assets.map(a => COINGECKO_IDS[a]).filter(Boolean).join(',');
+    const selectedIds = assets.map(a => dashboard_constants_1.COINGECKO_IDS[a]).filter(Boolean).join(',');
     if (!selectedIds)
         return dashboard_mock_1.MOCK_COIN_PRICES;
     try {
-        const response = await axios_1.default.get('https://api.coingecko.com/api/v3/simple/price', {
+        const response = await coinGeckoClient.get('/simple/price', {
             params: {
                 ids: selectedIds,
                 vs_currencies: 'usd',
@@ -42,17 +35,18 @@ async function getCryptoPrices(assets) {
             timeout: 5000,
         });
         return assets
-            .filter(a => COINGECKO_IDS[a])
+            .filter(a => dashboard_constants_1.COINGECKO_IDS[a])
             .map(symbol => {
-            const geckoId = COINGECKO_IDS[symbol];
+            const geckoId = dashboard_constants_1.COINGECKO_IDS[symbol];
             const live = response.data[geckoId];
             const mock = dashboard_mock_1.MOCK_PRICE_MAP[symbol];
             return {
                 id: geckoId,
-                name: COIN_NAMES[symbol] ?? symbol,
+                name: dashboard_constants_1.COIN_NAMES[symbol] ?? symbol,
                 symbol,
                 currentPrice: live?.usd ?? mock?.price ?? 0,
                 priceChange24h: live?.usd_24h_change ?? mock?.change24h ?? 0,
+                isFallback: false,
             };
         });
     }
@@ -63,11 +57,12 @@ async function getCryptoPrices(assets) {
             .map(symbol => {
             const mock = dashboard_mock_1.MOCK_PRICE_MAP[symbol];
             return {
-                id: COINGECKO_IDS[symbol] ?? symbol.toLowerCase(),
-                name: COIN_NAMES[symbol] ?? symbol,
+                id: dashboard_constants_1.COINGECKO_IDS[symbol] ?? symbol.toLowerCase(),
+                name: dashboard_constants_1.COIN_NAMES[symbol] ?? symbol,
                 symbol,
                 currentPrice: mock.price,
                 priceChange24h: mock.change24h,
+                isFallback: true,
             };
         });
     }
@@ -77,7 +72,7 @@ async function getCryptoNews() {
     if (!apiKey)
         return dashboard_mock_1.MOCK_NEWS;
     try {
-        const response = await axios_1.default.get('https://cryptopanic.com/api/v1/posts/', {
+        const response = await cryptoPanicClient.get('/posts/', {
             params: { auth_token: apiKey, filter: 'hot', kind: 'news', public: 'true' },
             timeout: 5000,
         });

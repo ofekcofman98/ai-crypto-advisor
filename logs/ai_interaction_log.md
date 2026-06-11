@@ -589,3 +589,15 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Fix: Railway Deployment Build Failures
+- **Date:** 2026-06-12
+- **Files Changed:** `apps/backend/prisma/schema.prisma`, `apps/backend/package.json`, `apps/backend/src/app.ts`, git-tracked folder rename `src/modules/Onboarding` → `src/modules/onboarding`
+- **Root Cause:** Four compounding issues blocked `npm run build` on Railway (Linux). (1) The `Onboarding` module folder was tracked in git with a capital `O`, but `app.ts` imported it with a lowercase `o`. On Railway's case-sensitive Linux filesystem this resolved to a missing module; `forceConsistentCasingInFileNames: true` also flagged the inconsistency locally. (2) `prisma generate` was never called before `tsc`, so `@prisma/client` had no generated types — every import of `PrismaClient`, `InvestorType`, `ContentType`, `VoteType`, `SectionType` failed. (3) `schema.prisma` still contained the `url = env("DATABASE_URL")` datasource property, which is removed in Prisma v7; this caused `prisma generate` itself to error out with P1012. (4) The `axios` `Cannot find module` errors were downstream of the missing Prisma client causing the full compilation to abort.
+- **Changes Made:**
+  - Renamed git-tracked folder `src/modules/Onboarding` → `src/modules/onboarding` via two-step `git mv` (required on Windows case-insensitive filesystem) so the lowercase import in `app.ts` resolves correctly on Linux.
+  - Removed `url = env("DATABASE_URL")` from the `datasource db` block in `prisma/schema.prisma` (Prisma v7 requires it in `prisma.config.ts` only, which already existed and was correct).
+  - Updated the backend `build` script from `"tsc"` to `"prisma generate && tsc"` so the Prisma client is always generated before TypeScript compilation on Railway.
+- **No schema/API contract changes.**
+
+---
+
