@@ -618,6 +618,14 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Fix: Vercel SPA Rewrite Rule — React Router 404 on Refresh (2026-06-12)
+- **Scope:** `apps/frontend/vercel.json` (new file)
+- **Root Cause:** Vercel serves static files directly; navigating to or refreshing a deep React Router path (e.g. `/dashboard`) returns a 404 because no physical file exists at that path.
+- **Changes Made:**
+  - Created `apps/frontend/vercel.json` with a catch-all rewrite: every request path `(.*)` is served `index.html`, letting React Router handle client-side routing entirely.
+
+---
+
 ## Fix: Backend CORS — Dynamic Vercel Preview Domains (2026-06-12)
 - **Scope:** `apps/backend/src/app.ts`
 - **Root Cause:** Vercel generates unique hashed preview deployment URLs (e.g. `ai-crypto-advisor-frontend-5hcdfe6j7-…vercel.app`) that can never be fully enumerated in a static allowlist.
