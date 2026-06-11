@@ -1,8 +1,15 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
+const rawBase: string =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://ai-crypto-advisor-production-c0c8.up.railway.app';
+
+// Guarantee the base always ends with /api regardless of how the env var is set.
+const BASE_URL = rawBase.endsWith('/api') ? rawBase : `${rawBase}/api`;
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'https://ai-crypto-advisor-production-c0c8.up.railway.app/api',
+    baseURL: BASE_URL,
     headers: {
       'Content-Type': 'application/json',
     },

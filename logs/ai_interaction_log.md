@@ -609,6 +609,13 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
   - The hardcoded production Railway URL is used as the fallback so the deployed frontend never resolves to localhost.
 - **Note:** `apps/frontend/package.json` build script was already `"vite build"` — no change required there.
 
+## Fix: Frontend API Base URL — Missing /api Segment on Production (2026-06-12)
+- **Scope:** `apps/frontend/src/utils/api.ts`
+- **Root Cause:** If `VITE_API_BASE_URL` on Vercel is set to the bare Railway domain (without `/api`), it overrides the hardcoded fallback and all requests miss the `/api` prefix, causing 404s.
+- **Changes Made:**
+  - Introduced a `rawBase` variable that reads `VITE_API_BASE_URL` or falls back to the bare Railway domain.
+  - Added a normalization step: `BASE_URL = rawBase.endsWith('/api') ? rawBase : \`${rawBase}/api\`` — so the Axios instance always resolves requests under `/api` regardless of how the env var is set.
+
 ---
 
 ## Fix: Backend CORS — Allow Vercel Production Origins (2026-06-12)
