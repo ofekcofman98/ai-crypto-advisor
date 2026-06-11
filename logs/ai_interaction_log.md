@@ -346,3 +346,16 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
   2. **Resiliency Validation:** Hardened code quality by explicitly testing failure boundaries. Verified that downstream API/DB timeouts trigger local static JSON or fallback array injection under a safe `200 OK` network contract.
   3. **Data Integrity:** Tested multi-path Zod validation boundaries for complex schemas, guaranteeing that corrupted client-side objects, empty arrays, or prohibited Enum values are stopped at the gateway with clear `400 Bad Request` messages.
 - **Status:** 4 suites, 28 tests, 0 failures. Backend ready for deployment staging.
+
+---
+
+### [2026-06-11] — Frontend Fractal / Component-Driven Architecture Refactor
+
+---
+
+- **What was implemented:** Migrated all 11 frontend components from flat `.tsx` files into self-contained fractal folders (`ComponentName/ComponentName.tsx` + `index.ts` barrel). Created a `SelectionGrid.spec.tsx` test suite covering string options, object options, selection state, and `accentColor` styling. Also bootstrapped the Vitest test setup file (`src/test/setup.ts`).
+- **Architectural Decisions:**
+  1. **Barrel `index.ts` files:** Every component folder exposes a single `index.ts` so all existing page-level import paths (`../components/ui/AuthInput`, etc.) resolve automatically through TypeScript/Vite directory resolution — zero import-path churn in consumer files.
+  2. **Depth-corrected inter-component imports:** Dashboard card components (`AiInsightCard`, `CoinPricesCard`, `MarketNewsCard`, `MemeCard`) were moved one level deeper; their `useDashboard`, `VotingButtons`, and `Card` imports were updated from `../../` to `../../../` / `../../` accordingly.
+  3. **Named re-exports for `RouteGuards`:** Because `RouteGuards` exports four named guards (not a default), its `index.ts` uses `export { ... } from './RouteGuards'` rather than `export { default }`, keeping the `App.tsx` destructured import intact.
+- **Status:** `tsc --noEmit` exits 0. All 11 components migrated, originals deleted, TS server clean and green.

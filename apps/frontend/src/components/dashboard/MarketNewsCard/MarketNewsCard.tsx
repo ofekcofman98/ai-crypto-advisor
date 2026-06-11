@@ -1,7 +1,7 @@
 import { Newspaper, ExternalLink } from 'lucide-react';
-import { useDashboardSection } from '../../hooks/useDashboard';
-import VotingButtons from '../VotingButtons';
-import Card from './Card';
+import { useDashboardSection } from '../../../hooks/useDashboard';
+import VotingButtons from '../../VotingButtons';
+import Card from '../Card';
 
 export default function MarketNewsCard() {
     const { data, isLoading, error } = useDashboardSection('/dashboard/news', 'news');
@@ -16,7 +16,7 @@ export default function MarketNewsCard() {
             hoverAccentColor="primary"
         >
             <div className="space-y-3 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
-            {Array.isArray(data) && data.map((item: any, index: number) => (
+            {Array.isArray(data) && data.map((item: { id?: string; url?: string; title: string; source?: { title: string }; sentiment?: string }, index: number) => (
                 <div key={item.id || index} className="p-2.5 bg-void rounded-xl border border-border/50 hover:border-border transition-colors">
                 <a
                     href={item.url || '#'}

@@ -1,7 +1,7 @@
 import { Laugh } from 'lucide-react';
-import { useDashboardSection } from '../../hooks/useDashboard';
-import VotingButtons from '../VotingButtons';
-import Card from './Card';
+import { useDashboardSection } from '../../../hooks/useDashboard';
+import VotingButtons from '../../VotingButtons';
+import Card from '../Card';
 
 export default function MemeCard() {
   const { data, isLoading, error } = useDashboardSection('/dashboard/meme', 'meme');

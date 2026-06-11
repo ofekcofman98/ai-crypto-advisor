@@ -1,7 +1,7 @@
 import { TrendingUp, TrendingDown, Inbox } from 'lucide-react';
-import { useDashboardSection } from '../../hooks/useDashboard';
-import VotingButtons from '../VotingButtons';
-import Card from './Card';
+import { useDashboardSection } from '../../../hooks/useDashboard';
+import VotingButtons from '../../VotingButtons';
+import Card from '../Card';
 
 export default function CoinPricesCard() {
   const { data, isLoading, error } = useDashboardSection('/dashboard/prices', 'prices');
@@ -23,7 +23,7 @@ export default function CoinPricesCard() {
           <p className="text-xs text-text-secondary/60 mt-0.5">Complete your profile to track live tokens.</p>
         </div>
       ) :(<div className="space-y-3">
-        {Array.isArray(data) && data.map((coin: any) => {
+        {Array.isArray(data) && data.map((coin: { id: string; symbol: string; name: string; currentPrice: number; priceChange24h: number }) => {
           const isPositive = coin.priceChange24h >= 0;
           return (
             <div key={coin.id} className="flex items-center justify-between p-2.5 bg-void rounded-xl border border-border/50">

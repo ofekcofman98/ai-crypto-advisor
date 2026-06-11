@@ -1,7 +1,7 @@
 import { Sparkles } from 'lucide-react';
-import { useDashboardSection } from '../../hooks/useDashboard';
-import VotingButtons from '../VotingButtons';
-import Card from './Card';
+import { useDashboardSection } from '../../../hooks/useDashboard';
+import VotingButtons from '../../VotingButtons';
+import Card from '../Card';
 
 export default function AiInsightCard() {
   const { data, isLoading, error } = useDashboardSection('/dashboard/insight', 'insight');

@@ -1,5 +1,5 @@
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
-import { useSubmitFeedback, useUserVotes, type VotePayload } from '../hooks/useDashboard';
+import { useSubmitFeedback, useUserVotes, type VotePayload } from '../../hooks/useDashboard';
 
 interface VotingButtonsProps {
     sectionType: VotePayload['sectionType'];
