@@ -449,3 +449,16 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+### [2026-06-11] — Frontend Component Test: MarketNewsCard
+
+- **What was implemented:** Full unit test suite for `MarketNewsCard.tsx` in `MarketNewsCard.spec.tsx` (16 tests across 6 describe blocks).
+- **Architectural Decisions:**
+  1. Mocked `../../../hooks/useDashboard` and `../../VotingButtons` following the established isolation pattern.
+  2. Test Case 1 (Loading): asserts `"Loading content..."` from `Card`, absence of title and VotingButtons.
+  3. Test Case 2 (Error): three sub-cases — `error` object, `data: null`, non-array `data` — all asserting fallback message `"Market news currently unavailable. Displaying static fallback feed."`.
+  4. Test Case 3 (Happy path): single-item fixture; asserts headline text, `<a>` `href`, `target="_blank"`, `rel="noopener noreferrer"` (security), source title, sentiment badge, VotingButtons sentinel, and absence of loading/error states.
+  5. Anchor security attributes (`target` + `rel`) tested explicitly via `getByRole('link')` to mirror real browser security constraints.
+- **Status:** Complete. 108 tests passed across 9 test files, 0 failures.
+
+---
+
