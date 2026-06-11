@@ -381,3 +381,13 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
   2. Integrated `localStorage.clear()` globally across test hooks to suppress automatic `persist` hydration leaks.
   3. Built an isolated execution pipeline utilizing React Router's `<MemoryRouter>` with embedded semantic target strings to mathematically verify redirect operations.
 - **Status:** 11 tests passed, 0 failures.
+
+---
+
+### [2026-06-11] — Frontend Component Test: VotingButtons
+
+- **What was implemented:** Behavioral unit testing for the `VotingButtons.tsx` feedback micro-interaction component using Vitest.
+- **Architectural Decisions:** 1. Implemented data layer decoupling by mocking custom TanStack Query hooks (`useUserVotes` and `useSubmitFeedback`) directly via `vi.mock`.
+  2. Verified active/inactive visual states by checking CSS class composition (`border-success`, `border-danger`) depending on mocked backend responses.
+  3. Asserted mutation triggers using Vitest spy references (`vi.fn()`) to ensure the user interaction accurately dispatches the expected payload.
+- **Status:** In progress.

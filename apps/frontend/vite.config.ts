@@ -8,5 +8,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    // forks pool uses child_process.fork() which breaks on Windows paths with spaces.
+    // threads pool uses Worker Threads and handles the path correctly.
+    pool: 'threads',
   },
 })
