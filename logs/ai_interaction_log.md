@@ -646,3 +646,12 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Entry — README.md Authoring (Jun 12, 2026)
+
+- **Type:** Documentation
+- **Scope:** `README.md` (root)
+- **Summary:** Authored the production README.md targeting a senior technical reviewer. Content sourced directly from source files rather than approximated — CORS logic quoted verbatim from `app.ts`, test counts verified by reading all four `.spec.ts` files (28 tests: auth 3, onboarding 7, dashboard 9, feedback 9), stack versions pulled from `package.json` manifests, and resilience cascade documented from `ai.service.ts` and `dashboard.service.ts` implementation.
+- **Sections covered:** Deployment URLs, monorepo + directory structure, dynamic CORS origin handling, three-level API resilience layer (service fallback, in-memory 5-min LLM cache, router catch-all), test suite table with per-module breakdown, CLI test commands, and internal reference index.
+
+---
+
