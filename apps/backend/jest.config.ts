@@ -12,6 +12,8 @@ const config: Config = {
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
+  setupFiles: ['<rootDir>/src/setupEnv.ts'],
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
 };
 
 export default config;
