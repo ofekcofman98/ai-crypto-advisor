@@ -474,3 +474,15 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+### [2026-06-11] — Frontend Component Test: AuthInput
+
+- **What was implemented:** Full unit test suite for `AuthInput.tsx` in `AuthInput.spec.tsx` (9 tests across 3 describe blocks). Installed `@testing-library/user-event` as a new dev dependency to support realistic DOM interaction simulation.
+- **Architectural Decisions:**
+  1. No hook or child mocks required — `AuthInput` is a pure presentational component with `InputHTMLAttributes` spread directly onto the native `<input>`.
+  2. Test Case 1 (Basic Rendering): label text via `getByText`; icon sentinel via `getByTestId` with parent `absolute` class assertion; `<input>` via `getByRole('textbox')`.
+  3. Test Case 2 (Attribute Spreading): queries via `getByPlaceholderText` (required for `type="email"` which does not have ARIA role `textbox`); asserts forwarded `type`, `placeholder`, and `disabled` attributes using `toHaveAttribute` and `toBeDisabled`.
+  4. Test Case 3 (User Interaction): `userEvent.type` simulates realistic keystrokes; asserts final `.value` via `toHaveValue('crypto')`; asserts `onChange` fires once per character (6 calls for `"crypto"`); asserts `onChange` is never called when `disabled={true}`.
+- **Status:** Complete. 127 tests passed across 11 test files, 0 failures.
+
+---
+
