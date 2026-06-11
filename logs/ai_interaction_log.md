@@ -503,7 +503,7 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
-## [2026-06-11] Entry 13 — Pages Fractal Refactor + Login Test Suite
+## [2026-06-11] — Pages Fractal Refactor + Login Test Suite
 
 - **Date:** 2026-06-11
 - **Feature:** Structural refactor of `pages/` to Fractal Component layout + `Login.spec.tsx` integration suite
@@ -523,7 +523,7 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
-## Entry 14 — Onboarding Integration Test Suite
+## [2026-06-11] — Onboarding Integration Test Suite
 
 - **Date:** 2026-06-11
 - **Feature:** `Onboarding.spec.tsx` — full integration coverage for the onboarding page
@@ -537,6 +537,23 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
   5. `axios` itself is not mocked — `api.post` is the only call surface touched by the component, so a direct `vi.mock('../../utils/api')` is sufficient and avoids the internal Axios module graph.
 - **Test Cases:** 3 tests — 1 validation lock, 1 toggle deselection, 1 happy path.
 - **Test Results:** 141 tests passed across 14 test files, 0 failures.
+
+---
+
+## [2026-06-11] — Dashboard Integration Test Suite
+
+- **Date:** 2026-06-11
+- **Feature:** `Dashboard.spec.tsx` — full integration coverage for the dashboard page
+- **Files Changed:**
+  - Created `pages/Dashboard/Dashboard.spec.tsx`
+- **Key Decisions:**
+  1. `Dashboard` calls `useAuthStore()` **without a selector** (destructures `{ user, logout }` directly), so the mock returns the state object directly rather than invoking a selector function — a distinct pattern from Login/Register/Onboarding which use selector-style hooks.
+  2. `vi.hoisted` declares `mockLogout` before module evaluation so it is safely captured inside the `vi.mock` factory closure.
+  3. `CardGrid` mocked as a transparent `children` pass-through so the four card stubs still render inside it without needing the real layout implementation.
+  4. All four smart child cards (`CoinPricesCard`, `MarketNewsCard`, `AiInsightCard`, `MemeCard`) replaced with `data-testid` stub elements — eliminates every downstream API hook, TanStack Query provider requirement, and Lucide SVG traversal.
+  5. Logout button located via `getByTitle('Sign Out')` — the most precise DOM anchor since the `title` attribute is the semantic source of truth; more stable than relying on the CSS-hidden "Logout" span text whose visibility depends on viewport media queries not evaluated by jsdom.
+- **Test Cases:** 4 tests — 2 session-binding, 1 sub-component mounting, 1 session exit.
+- **Test Results:** 145 tests passed across 15 test files, 0 failures.
 
 ---
 
