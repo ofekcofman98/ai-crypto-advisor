@@ -618,6 +618,16 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Fix: Backend CORS — Dynamic Vercel Preview Domains (2026-06-12)
+- **Scope:** `apps/backend/src/app.ts`
+- **Root Cause:** Vercel generates unique hashed preview deployment URLs (e.g. `ai-crypto-advisor-frontend-5hcdfe6j7-…vercel.app`) that can never be fully enumerated in a static allowlist.
+- **Changes Made:**
+  - Replaced the `ALLOWED_ORIGINS` array with an `isAllowedOrigin` predicate function.
+  - Logic: allows `http://localhost:5173` exactly, any origin ending in `.vercel.app` (covers all current and future Vercel preview/production domains), and any value set via `process.env.CLIENT_ORIGIN` as a runtime escape hatch.
+  - `credentials: true` and the no-origin pass-through (server-to-server requests) are retained.
+
+---
+
 ## Fix: Backend CORS — Allow Vercel Production Origins (2026-06-12)
 - **Scope:** `apps/backend/src/app.ts`
 - **Root Cause:** CORS `origin` was a single string (`process.env.CLIENT_ORIGIN ?? 'http://localhost:5173'`), so the production Vercel domain was never in the allowlist.

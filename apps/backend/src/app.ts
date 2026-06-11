@@ -26,18 +26,18 @@ const app: Application = express();
 
 // ─── Core Middleware ──────────────────────────────────────────────────────────
 
-const ALLOWED_ORIGINS: string[] = [
-  'http://localhost:5173',
-  'https://ai-crypto-advisor-frontend-seven.vercel.app',
-  'https://ai-crypto-advisor-frontend-46e6fq2ea-ofek-cofmans-projects.vercel.app',
-  ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : []),
-];
+const isAllowedOrigin = (origin: string): boolean => {
+  if (origin === 'http://localhost:5173') return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  if (process.env.CLIENT_ORIGIN && origin === process.env.CLIENT_ORIGIN) return true;
+  return false;
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow server-to-server / curl requests (no Origin header) and all listed origins.
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      // Allow server-to-server / curl requests (no Origin header) and all allowed origins.
+      if (!origin || isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin '${origin}' is not allowed.`));
