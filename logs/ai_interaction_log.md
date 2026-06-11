@@ -611,3 +611,13 @@ Implemented the Onboarding module following the same Route-Centric pattern estab
 
 ---
 
+## Fix: Backend CORS — Allow Vercel Production Origins (2026-06-12)
+- **Scope:** `apps/backend/src/app.ts`
+- **Root Cause:** CORS `origin` was a single string (`process.env.CLIENT_ORIGIN ?? 'http://localhost:5173'`), so the production Vercel domain was never in the allowlist.
+- **Changes Made:**
+  - Replaced the single-string `origin` with a callback that checks against an explicit `ALLOWED_ORIGINS` array.
+  - Array includes: `http://localhost:5173` (local dev), `https://ai-crypto-advisor-frontend-seven.vercel.app`, `https://ai-crypto-advisor-frontend-46e6fq2ea-ofek-cofmans-projects.vercel.app`, and any additional runtime value from `process.env.CLIENT_ORIGIN`.
+  - `credentials: true` retained; requests with no `Origin` header (server-to-server / curl) are passed through.
+
+---
+

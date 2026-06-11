@@ -26,11 +26,24 @@ const app: Application = express();
 
 // ─── Core Middleware ──────────────────────────────────────────────────────────
 
+const ALLOWED_ORIGINS: string[] = [
+  'http://localhost:5173',
+  'https://ai-crypto-advisor-frontend-seven.vercel.app',
+  'https://ai-crypto-advisor-frontend-46e6fq2ea-ofek-cofmans-projects.vercel.app',
+  ...(process.env.CLIENT_ORIGIN ? [process.env.CLIENT_ORIGIN] : []),
+];
+
 app.use(
   cors({
-    // In production, set CLIENT_ORIGIN to the deployed frontend URL.
-    origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
-    credentials: true, // Required so browsers send the HttpOnly cookie cross-origin.
+    origin: (origin, callback) => {
+      // Allow server-to-server / curl requests (no Origin header) and all listed origins.
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin '${origin}' is not allowed.`));
+      }
+    },
+    credentials: true,
   }),
 );
 
