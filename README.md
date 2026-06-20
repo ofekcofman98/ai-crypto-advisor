@@ -10,7 +10,7 @@ A full-stack, production-deployed application that delivers personalized cryptoc
 |---|---|
 | **Frontend** | [https://ai-crypto-advisor-frontend-seven.vercel.app](https://ai-crypto-advisor-frontend-seven.vercel.app) |
 | **Backend API** | [https://ai-crypto-advisor-production-c0c8.up.railway.app](https://ai-crypto-advisor-production-c0c8.up.railway.app) |
-| **Repository** | [https://github.com/ofekcofman98/ai-crypto-advisor](https://github.com/OfekCo3/AI-Crypto-Advisor) |
+| **Repository** | [https://github.com/ofekcofman98/ai-crypto-advisor](https://github.com/ofekcofman98/AI-Crypto-Advisor) |
 
 ---
 
